@@ -1,6 +1,7 @@
 #ifndef BUNCH_H_
 #define BUNCH_H_
 
+#include "reference_particle.h"
 #include "restrict_extension.h"
 
 class Bunch
