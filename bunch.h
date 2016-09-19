@@ -1,12 +1,19 @@
 #ifndef BUNCH_H_
 #define BUNCH_H_
 
+#include "multi_array_typedefs.h"
 #include "reference_particle.h"
 #include "restrict_extension.h"
 
+//  J. Beringer et al. (Particle Data Group), PR D86, 010001 (2012) and 2013
+//  partial update for the 2014 edition (URL: http://pdg.lbl.gov)
+static const double proton_mass = 0.938272046; // Mass of proton [GeV/c^2]
+static const double example_gamma = 10.0;
+static const int proton_charge = 1; // Charge in units of e
+
 class Bunch
 {
-  public:
+public:
     static const int x = 0;
     static const int xp = 1;
     static const int y = 2;
@@ -28,16 +35,17 @@ class Bunch
         double* RESTRICT dpop;
     };
 
-  private:
+private:
     Reference_particle reference_particle;
     double* storage;
     MArray2d_ref* local_particles;
     int local_num;
     AView aview;
 
-  public:
+public:
     Bunch(int total_num, int mpi_size, int mpi_rank)
-        : reference_particle()
+        : reference_particle(proton_charge, proton_mass,
+                             example_gamma * proton_mass)
     {
         local_num = total_num / mpi_size;
         storage =
@@ -75,7 +83,7 @@ class Bunch
 
     MArray2d_ref get_local_particles() { return *local_particles; }
 
-    double get_mass() const { return dummy_mass; }
+    double get_mass() const { return reference_particle.get_mass(); }
 
     int get_local_num() const { return local_num; }
 

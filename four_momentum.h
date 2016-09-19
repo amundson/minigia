@@ -30,6 +30,8 @@ public:
         gamma = total_energy / mass;
         update_from_gamma();
     }
+
+    double get_mass() const { return mass; }
 };
 
 #endif /* FOUR_MOMENTUM_H_ */

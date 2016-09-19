@@ -15,6 +15,8 @@ public:
         , four_momentum(mass, total_energy)
     {
     }
+
+    double get_mass() const { return four_momentum.get_mass(); }
 };
 
 #endif /* REFERENCE_PARTICLE_H_ */
