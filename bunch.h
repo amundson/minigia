@@ -113,4 +113,51 @@ public:
     }
 };
 
+bool
+floating_point_equal(double a, double b, double tolerance)
+{
+    if (std::abs(a) < tolerance) {
+        return (std::abs(a - b) < tolerance);
+    } else {
+        return (std::abs((a - b) / a) < tolerance);
+    }
+}
+
+bool
+multi_array_check_equal(MArray2d_ref const& a, MArray2d_ref const& b,
+                        double tolerance)
+{
+    for (unsigned int i = a.index_bases()[0];
+         i < a.index_bases()[0] + a.shape()[0]; ++i) {
+        for (unsigned int j = a.index_bases()[1];
+             j < a.index_bases()[1] + a.shape()[1]; ++j) {
+            if (!floating_point_equal(a[i][j], b[i][j], tolerance)) {
+                std::cerr << "multi_array_check_equal:\n";
+                std::cerr << "  a[" << i << "][" << j << "] = " << a[i][j]
+                          << std::endl;
+                std::cerr << "  b[" << i << "][" << j << "] = " << b[i][j]
+                          << std::endl;
+                std::cerr << "  a-b = " << a[i][j] - b[i][j]
+                          << ", tolerance = " << tolerance << std::endl;
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+bool
+check_equal(Bunch& b1, Bunch& b2, double tolerance)
+{
+    if (b1.get_local_num() != b2.get_local_num()) {
+        std::cerr << "check_equal: bunch 1 has " << b1.get_local_num()
+                  << "local particles, ";
+        std::cerr << "bunch 2 has " << b2.get_local_num() << "local particles"
+                  << std::endl;
+        return false;
+    }
+    return multi_array_check_equal(b1.get_local_particles(),
+                                   b2.get_local_particles(), tolerance);
+}
+
 #endif /* BUNCH_H_ */
