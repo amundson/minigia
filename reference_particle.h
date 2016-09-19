@@ -17,6 +17,8 @@ public:
     }
 
     double get_mass() const { return four_momentum.get_mass(); }
+
+    double get_momentum() const { return four_momentum.get_momentum(); }
 };
 
 #endif /* REFERENCE_PARTICLE_H_ */

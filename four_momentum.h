@@ -32,6 +32,8 @@ public:
     }
 
     double get_mass() const { return mass; }
+
+    double get_momentum() const { return momentum; }
 };
 
 #endif /* FOUR_MOMENTUM_H_ */
