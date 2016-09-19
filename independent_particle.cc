@@ -172,6 +172,10 @@ run()
     double reference_timing =
         do_timing(&propagate_orig, "orig", bunch, thedrift, 0.0, rank);
 
+    if (rank == 0) {
+        std::cout << "GSVector::implementation = " << GSVector::implementation
+                  << std::endl;
+    }
     run_check(&propagate, "optimized", thedrift, size, rank);
     do_timing(&propagate, "optimized", bunch, thedrift,
               reference_timing, rank);
