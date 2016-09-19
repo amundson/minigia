@@ -5,7 +5,7 @@
 
 class Bunch
 {
-public:
+  public:
     static const int x = 0;
     static const int xp = 1;
     static const int y = 2;
@@ -27,14 +27,14 @@ public:
         double* RESTRICT dpop;
     };
 
-private:
+  private:
     Reference_particle reference_particle;
     double* storage;
     MArray2d_ref* local_particles;
     int local_num;
     AView aview;
 
-public:
+  public:
     Bunch(int total_num, int mpi_size, int mpi_rank)
         : reference_particle()
     {
