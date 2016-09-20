@@ -3,10 +3,15 @@ cmake_minimum_required(VERSION 3.2)
 
 find_package(MPI REQUIRED)
 
+if(DEFINES)
+    add_definitions(${DEFINES})
+endif()
+
 find_package(Boost REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
 
 include_directories(${CMAKE_SOURCE_DIR})
+include_directories(${CMAKE_SOURCE_DIR}/vectorclass)
 
 add_executable(independent_particle
     independent_particle.cc
