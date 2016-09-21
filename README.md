@@ -13,3 +13,4 @@
     cmake -DCMAKE_BUILD_TYPE=Release -DDEFINES='-DGSV_AVX' \
         -DCMAKE_CXX_COMPILER=/usr/local/bin/g++-6 ..
 
+    make
