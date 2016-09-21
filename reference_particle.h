@@ -16,6 +16,8 @@ public:
     {
     }
 
+    double get_charge() const { return charge; }
+
     double get_mass() const { return four_momentum.get_mass(); }
 
     double get_momentum() const { return four_momentum.get_momentum(); }
