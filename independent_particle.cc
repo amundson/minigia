@@ -20,6 +20,12 @@ public:
     double getReferenceTime() const { return dummy_reference_time; }
 };
 
+inline double
+invsqrt(double x)
+{
+    return 1.0 / sqrt(x);
+}
+
 template <typename T>
 inline void
 drift_unit(T& x, T& y, T& cdt, T& xp, T& yp, T& dpop, double length,
@@ -76,7 +82,37 @@ propagate_orig(Bunch& bunch, drift& thedrift)
 }
 
 void
-propagate(Bunch& bunch, drift& thedrift)
+propagate_double(Bunch& bunch, drift& thedrift)
+{
+    int local_num = bunch.get_local_num();
+    const double length = thedrift.Length();
+    const double reference_momentum =
+        bunch.get_reference_particle().get_momentum();
+    const double m = bunch.get_mass();
+    const double reference_time = thedrift.getReferenceTime();
+    double *RESTRICT xa, *RESTRICT xpa, *RESTRICT ya, *RESTRICT ypa,
+        *RESTRICT cdta, *RESTRICT dpopa;
+    bunch.set_arrays(xa, xpa, ya, ypa, cdta, dpopa);
+
+    for (int part = 0; part < local_num; ++part) {
+        double x(xa[part]);
+        double xp(xpa[part]);
+        double y(ya[part]);
+        double yp(ypa[part]);
+        double cdt(cdta[part]);
+        double dpop(dpopa[part]);
+
+        drift_unit(x, y, cdt, xp, yp, dpop, length, reference_momentum, m,
+                   reference_time);
+
+        xa[part] = x;
+        ya[part] = y;
+        cdta[part] = cdt;
+    }
+}
+
+void
+propagate_gsv(Bunch& bunch, drift& thedrift)
 {
     int local_num = bunch.get_local_num();
     if (local_num % GSVector::size != 0) {
@@ -172,13 +208,17 @@ run()
     double reference_timing =
         do_timing(&propagate_orig, "orig", bunch, thedrift, 0.0, rank);
 
+    run_check(&propagate_double, "optimized", thedrift, size, rank);
+    double opt_timing = do_timing(&propagate_double, "optimized", bunch,
+                                  thedrift, reference_timing, rank);
+
     if (rank == 0) {
         std::cout << "GSVector::implementation = " << GSVector::implementation
                   << std::endl;
     }
-    run_check(&propagate, "optimized", thedrift, size, rank);
-    do_timing(&propagate, "optimized", bunch, thedrift,
-              reference_timing, rank);
+    run_check(&propagate_double, "vectorized", thedrift, size, rank);
+    do_timing(&propagate_double, "vectorized", bunch, thedrift, opt_timing,
+              rank);
 }
 
 int
