@@ -216,8 +216,8 @@ run()
         std::cout << "GSVector::implementation = " << GSVector::implementation
                   << std::endl;
     }
-    run_check(&propagate_double, "vectorized", thedrift, size, rank);
-    do_timing(&propagate_double, "vectorized", bunch, thedrift, opt_timing,
+    run_check(&propagate_gsv, "vectorized", thedrift, size, rank);
+    do_timing(&propagate_gsv, "vectorized", bunch, thedrift, opt_timing,
               rank);
 }
 
