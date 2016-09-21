@@ -1,12 +1,15 @@
 project(MINIGIA)
-cmake_minimum_required(VERSION 3.2)
+cmake_minimum_required(VERSION 2.8)
 
 find_package(MPI REQUIRED)
+include_directories(${MPI_CXX_INCLUDE_PATH})
 
 if(DEFINES)
     add_definitions(${DEFINES})
 endif()
 
+set(Boost_USE_STATIC_LIBS OFF)
+set(Boost_NO_BOOST_CMAKE ON)
 find_package(Boost REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
 
