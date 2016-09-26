@@ -42,10 +42,13 @@ add_executable(space_charge_3d
     distributed_rectangular_grid.cc
     distributed_rectangular_grid.h
     interpolate_rectangular_zyx.h
+    math_constants.h
+    multi_array_offsets.h
     rectangular_grid.cc
     rectangular_grid.h
     rectangular_grid_domain.cc
     rectangular_grid_domain.h
+    simple_timer.h
     space_charge_3d.cc
     space_charge_3d_open_hockney.cc
     bunch.h

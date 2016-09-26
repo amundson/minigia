@@ -156,19 +156,16 @@ public:
     apply_kick(Bunch & bunch, Rectangular_grid const& En, double delta_tau,
             int component);
     virtual void
-    apply(Bunch & bunch, double time_step, int verbosity,
-            Logger & logger);
+    apply(Bunch & bunch, double time_step, int verbosity);
     template<class Archive>
         void
         save(Archive & ar, const unsigned int version) const;
     template<class Archive>
         void
         load(Archive & ar, const unsigned int version);
-    BOOST_SERIALIZATION_SPLIT_MEMBER()
     virtual
     ~Space_charge_3d_open_hockney();
 };
-BOOST_CLASS_EXPORT_KEY(Space_charge_3d_open_hockney)
 
 typedef boost::shared_ptr<Space_charge_3d_open_hockney > Space_charge_3d_open_hockney_sptr; // syndoc:include
 

@@ -70,9 +70,6 @@ public:
     ~Commxx();
 };
 
-Commxxs
-generate_subcomms(Commxx_sptr parent_sptr, int count);
-
 Commxx_sptr
 make_optimal_spc_comm(Commxx_sptr parent_sptr, int optimal_number, bool equally_spread=false);
 
