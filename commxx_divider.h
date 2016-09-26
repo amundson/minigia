@@ -1,7 +1,7 @@
 #ifndef COMMXX_DIVIDER_H_
 #define COMMXX_DIVIDER_H_
 
-#include "synergia/utils/commxx.h"
+#include "commxx.h"
 #include <map>
 
 class Commxx_divider

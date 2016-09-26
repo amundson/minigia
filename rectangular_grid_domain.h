@@ -3,7 +3,7 @@
 
 #include <vector>
 #include <boost/shared_ptr.hpp>
-#include "synergia/utils/fast_int_floor.h"
+#include "fast_int_floor.h"
 
 class Rectangular_grid_domain
 {

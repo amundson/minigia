@@ -1,13 +1,13 @@
 #include "space_charge_3d_open_hockney.h"
-#include "synergia/bunch/core_diagnostics.h"
-#include "synergia/foundation/math_constants.h"
+#include "core_diagnostics.h"
+#include "math_constants.h"
 using mconstants::pi;
-#include "synergia/foundation/physical_constants.h"
+#include "physical_constants.h"
 using pconstants::epsilon0;
 #include "deposit.h"
 #include "interpolate_rectangular_zyx.h"
-#include "synergia/utils/multi_array_offsets.h"
-#include "synergia/utils/simple_timer.h"
+#include "multi_array_offsets.h"
+#include "simple_timer.h"
 
 void
 Space_charge_3d_open_hockney::setup_communication(

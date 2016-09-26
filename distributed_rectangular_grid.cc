@@ -1,5 +1,5 @@
 #include "distributed_rectangular_grid.h"
-#include "synergia/utils/multi_array_offsets.h"
+#include "multi_array_offsets.h"
 
 void
 Distributed_rectangular_grid::construct_hockney(int lower, int upper,
