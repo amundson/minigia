@@ -34,6 +34,8 @@ add_executable(space_charge_3d
     commxx.h
     commxx_divider.cc
     commxx_divider.h
+    core_diagnostics.cc
+    core_diagnostics.h
     deposit.h
     distributed_fft3d.cc
     distributed_fft3d.h

@@ -6,8 +6,6 @@
 #include <boost/shared_ptr.hpp>
 #include "mpi.h"
 
-#include "serialization.h"
-
 class Commxx;
 typedef boost::shared_ptr<Commxx > Commxx_sptr; // syndoc:include
 
@@ -69,18 +67,8 @@ public:
     MPI_Comm
     get() const;
 
-    template<class Archive>
-        void
-        save(Archive & ar, const unsigned int version) const;
-    template<class Archive>
-        void
-        load(Archive & ar, const unsigned int version);
-    BOOST_SERIALIZATION_SPLIT_MEMBER()
-
     ~Commxx();
 };
-
-typedef std::vector<Commxx_sptr > Commxxs;
 
 Commxxs
 generate_subcomms(Commxx_sptr parent_sptr, int count);
