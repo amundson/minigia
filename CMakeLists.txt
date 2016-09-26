@@ -26,3 +26,32 @@ add_executable(independent_particle
     restrict_extension.h)
 target_link_libraries(independent_particle ${MPI_LIBRARIES})
 
+add_executable(space_charge_3d
+    space_charge_3d.cc
+    space_charge_3d_open_hockney.cc
+    space_charge_3d_open_hockney.h
+    commxx.cc
+    commxx.h
+    commxx_divider.cc
+    commxx_divider.h
+    deposit.h
+    distributed_fft3d.cc
+    distributed_fft3d.h
+    distributed_rectangular_grid.cc
+    distributed_rectangular_grid.h
+    interpolate_rectangular_zyx.h
+    rectangular_grid.cc
+    rectangular_grid.h
+    rectangular_grid_domain.cc
+    rectangular_grid_domain.h
+    space_charge_3d.cc
+    space_charge_3d_open_hockney.cc
+    bunch.h
+    four_momentum.h
+    gsvector.h
+    multi_array_typedefs.h
+    physical_constants.h
+    reference_particle.h
+    restrict_extension.h)
+target_link_libraries(space_charge_3d ${MPI_LIBRARIES})
+
