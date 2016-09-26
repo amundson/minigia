@@ -13,30 +13,9 @@
 /// grid shape expects [x][y][z] order.
 class Space_charge_3d_open_hockney
 {
-public:
-    enum Green_fn_type
-    {
-        pointlike = 1, linear = 2
-    };
-    enum Charge_density_comm
-    {
-        reduce_scatter = 1, charge_allreduce = 2
-    };
-    enum E_field_comm
-    {
-        gatherv_bcast = 1, allgatherv = 2, e_field_allreduce = 3
-    };
 private:
     std::vector<int > grid_shape, doubled_grid_shape, padded_grid_shape;
     Rectangular_grid_domain_sptr domain_sptr, doubled_domain_sptr;
-    bool periodic_z;
-    double z_period;
-    bool grid_entire_period;
-    bool longitudinal_kicks;
-    Green_fn_type green_fn_type;
-    Charge_density_comm charge_density_comm;
-    E_field_comm e_field_comm; // vestigial from when we thought we would choose the most
-                               // most performant collective primitive
     Distributed_fft3d_sptr distributed_fft3d_sptr;
     Commxx_divider_sptr commxx_divider_sptr;
     Commxx_sptr comm2_sptr, comm1_sptr;
@@ -53,31 +32,11 @@ private:
     void
     set_doubled_domain();
 public:
-    Space_charge_3d_open_hockney(std::vector<int > const & grid_shape,
-            bool longitudinal_kicks = true, bool periodic_z = false,
-            double z_period = 0.0, bool grid_entire_period = false,
-            double n_sigma = 8.0);
     Space_charge_3d_open_hockney(Commxx_divider_sptr commxx_divider_sptr,
             std::vector<int > const & grid_shape,
-            bool longitudinal_kicks = true, bool periodic_z = false,
-            double z_period = 0.0, bool grid_entire_period = false,
-            double n_sigma = 8.0);
-    /// Deprecated. The comm_sptr argument is ignored.
-    Space_charge_3d_open_hockney(Commxx_sptr comm_sptr,
-            std::vector<int > const & grid_shape,
-            bool longitudinal_kicks = true, bool periodic_z = false,
-            double z_period = 0.0, bool grid_entire_period = false,
             double n_sigma = 8.0);
     /// Note: Use Space_charge_3d_open_hockney::get_internal_grid_shape for
     /// Distributed_fft3d.
-    /// jfa: unnecessary complication
-//    Space_charge_3d_open_hockney(Distributed_fft3d_sptr distributed_fft3d_sptr,
-//            bool longitudinal_kicks = true, bool periodic_z = false,
-//            double z_period = 0.0, bool grid_entire_period = false,
-//            double n_sigma = 8.0);
-    Space_charge_3d_open_hockney();
-    virtual Space_charge_3d_open_hockney *
-    clone();
     void
     setup_communication(Commxx_sptr const& bunch_comm_sptr);
     void
@@ -85,34 +44,12 @@ public:
     double
     get_n_sigma() const;
     void
-    set_green_fn_type(Green_fn_type green_fn_type);
-    Green_fn_type
-    get_green_fn_type() const;
-    void
-    set_charge_density_comm(Charge_density_comm charge_density_comm);
-    Charge_density_comm
-    get_charge_density_comm() const;
-    void
-    set_e_field_comm(E_field_comm e_field_comm);
-    E_field_comm
-    get_e_field_comm() const;
-    void
-    set_fixed_domain(Rectangular_grid_domain_sptr domain_sptr);
-    void
     update_domain(Bunch const& bunch);
     Rectangular_grid_domain const&
     get_domain() const
     {
         return *domain_sptr;
     }
-    Rectangular_grid_domain_sptr
-    get_domain_sptr() const;
-    Rectangular_grid_domain_sptr
-    get_doubled_domain_sptr() const;
-    /// Returns global charge density on doubled grid in [C/m^3]
-    Distributed_rectangular_grid_sptr
-    get_global_charge_density2_reduce_scatter(
-            Rectangular_grid const& local_charge_density, Commxx_sptr comm_sptr);
     /// Returns global charge density on doubled grid in [C/m^3]
     Distributed_rectangular_grid_sptr
     get_global_charge_density2_allreduce(
@@ -128,8 +65,6 @@ public:
     Distributed_rectangular_grid_sptr
     get_green_fn2_pointlike();
     Distributed_rectangular_grid_sptr
-    get_green_fn2_linear();
-    Distributed_rectangular_grid_sptr
     get_scalar_field2(Distributed_rectangular_grid & charge_density22,
             Distributed_rectangular_grid & green_fn2);
     Distributed_rectangular_grid_sptr
@@ -141,12 +76,6 @@ public:
     get_electric_field_component(
             Distributed_rectangular_grid const& scalar_field, int component);
     Rectangular_grid_sptr
-    get_global_electric_field_component_gatherv_bcast(
-            Distributed_rectangular_grid const& dist_field);
-    Rectangular_grid_sptr
-    get_global_electric_field_component_allgatherv(
-            Distributed_rectangular_grid const& dist_field);
-    Rectangular_grid_sptr
     get_global_electric_field_component_allreduce(
             Distributed_rectangular_grid const& dist_field);
     Rectangular_grid_sptr
@@ -155,18 +84,10 @@ public:
     void
     apply_kick(Bunch & bunch, Rectangular_grid const& En, double delta_tau,
             int component);
-    virtual void
+    void
     apply(Bunch & bunch, double time_step, int verbosity);
-    template<class Archive>
-        void
-        save(Archive & ar, const unsigned int version) const;
-    template<class Archive>
-        void
-        load(Archive & ar, const unsigned int version);
     virtual
     ~Space_charge_3d_open_hockney();
 };
-
-typedef boost::shared_ptr<Space_charge_3d_open_hockney > Space_charge_3d_open_hockney_sptr; // syndoc:include
 
 #endif /* SPACE_CHARGE_3D_OPEN_HOCKNEY_H_ */

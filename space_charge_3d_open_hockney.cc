@@ -1,4 +1,7 @@
 #include "space_charge_3d_open_hockney.h"
+
+#include <stdexcept>
+
 #include "core_diagnostics.h"
 #include "math_constants.h"
 using mconstants::pi;
@@ -80,55 +83,21 @@ void
 Space_charge_3d_open_hockney::constructor_common(
         std::vector<int > const& grid_shape)
 {
-    if (this->periodic_z && (this->z_period == 0.0)) {
-        throw std::runtime_error(
-                "Space_charge_3d_open_hockney: z_period cannot be 0 when periodic_z is true");
-    }
     this->grid_shape[0] = grid_shape[2];
     this->grid_shape[1] = grid_shape[1];
     this->grid_shape[2] = grid_shape[0];
     for (int i = 0; i < 3; ++i) {
         doubled_grid_shape[i] = 2 * this->grid_shape[i];
     }
-
-    set_green_fn_type(linear);
-    set_charge_density_comm(charge_allreduce);
-    set_e_field_comm(e_field_allreduce);
-}
-
-Space_charge_3d_open_hockney::Space_charge_3d_open_hockney(
-        std::vector<int > const & grid_shape, bool longitudinal_kicks,
-        bool periodic_z, double z_period, bool grid_entire_period,
-        double n_sigma) :
-                grid_shape(3),
-                doubled_grid_shape(3),
-                padded_grid_shape(3),
-                periodic_z(periodic_z),
-                z_period(z_period),
-                grid_entire_period(grid_entire_period),
-                longitudinal_kicks(longitudinal_kicks),
-                commxx_divider_sptr(new Commxx_divider),
-                comm2_sptr(),
-                comm1_sptr(),
-                n_sigma(n_sigma),
-                domain_fixed(false),
-                have_domains(false)
-{
-    constructor_common(grid_shape);
 }
 
 Space_charge_3d_open_hockney::Space_charge_3d_open_hockney(
         Commxx_divider_sptr commxx_divider_sptr,
-        std::vector<int > const & grid_shape, bool longitudinal_kicks,
-        bool periodic_z, double z_period, bool grid_entire_period,
+        std::vector<int > const & grid_shape,
         double n_sigma) :
                 grid_shape(3),
                 doubled_grid_shape(3),
                 padded_grid_shape(3),
-                periodic_z(periodic_z),
-                z_period(z_period),
-                grid_entire_period(grid_entire_period),
-                longitudinal_kicks(longitudinal_kicks),
                 commxx_divider_sptr(commxx_divider_sptr),
                 comm2_sptr(),
                 comm1_sptr(),
@@ -139,108 +108,10 @@ Space_charge_3d_open_hockney::Space_charge_3d_open_hockney(
     constructor_common(grid_shape);
 }
 
-Space_charge_3d_open_hockney::Space_charge_3d_open_hockney(
-        Commxx_sptr comm_sptr, std::vector<int > const & grid_shape,
-        bool longitudinal_kicks, bool periodic_z, double z_period,
-        bool grid_entire_period, double n_sigma) :
-                grid_shape(3),
-                doubled_grid_shape(3),
-                padded_grid_shape(3),
-                periodic_z(periodic_z),
-                z_period(z_period),
-                grid_entire_period(grid_entire_period),
-                longitudinal_kicks(longitudinal_kicks),
-                commxx_divider_sptr(new Commxx_divider),
-                comm2_sptr(),
-                comm1_sptr(),
-                n_sigma(n_sigma),
-                domain_fixed(false),
-                have_domains(false)
-{
-    constructor_common(grid_shape);
-}
-
-Space_charge_3d_open_hockney::Space_charge_3d_open_hockney()
-{
-}
-
-Space_charge_3d_open_hockney *
-Space_charge_3d_open_hockney::clone()
-{
-    return new Space_charge_3d_open_hockney(*this);
-}
-
 double
 Space_charge_3d_open_hockney::get_n_sigma() const
 {
     return n_sigma;
-}
-
-void
-Space_charge_3d_open_hockney::set_green_fn_type(Green_fn_type green_fn_type)
-{
-    switch (green_fn_type) {
-    case pointlike:
-        break;
-    case linear:
-        break;
-    default:
-        throw runtime_error(
-                "Space_charge_3d_open_hockney::set_green_fn_type: invalid green_fn_type");
-    }
-    this->green_fn_type = green_fn_type;
-}
-
-Space_charge_3d_open_hockney::Green_fn_type
-Space_charge_3d_open_hockney::get_green_fn_type() const
-{
-    return green_fn_type;
-}
-
-void
-Space_charge_3d_open_hockney::set_charge_density_comm(
-        Charge_density_comm charge_density_comm)
-{
-    switch (charge_density_comm) {
-    case reduce_scatter:
-        break;
-    case charge_allreduce:
-        break;
-    default:
-        throw runtime_error(
-                "Space_charge_3d_open_hockney::set_charge_density_comm: invalid charge_density_comm");
-    }
-    this->charge_density_comm = charge_density_comm;
-}
-
-Space_charge_3d_open_hockney::Charge_density_comm
-Space_charge_3d_open_hockney::get_charge_density_comm() const
-{
-    return charge_density_comm;
-}
-
-void
-Space_charge_3d_open_hockney::set_e_field_comm(E_field_comm e_field_comm)
-{
-    switch (e_field_comm) {
-    case gatherv_bcast:
-        break;
-    case allgatherv:
-        break;
-    case e_field_allreduce:
-        break;
-    default:
-        throw runtime_error(
-                "Space_charge_3d_open_hockney::set_e_field_comm: invalid e_field_comm");
-    }
-
-    this->e_field_comm = e_field_comm;
-}
-
-Space_charge_3d_open_hockney::E_field_comm
-Space_charge_3d_open_hockney::get_e_field_comm() const
-{
-    return e_field_comm;
 }
 
 void
@@ -253,23 +124,7 @@ Space_charge_3d_open_hockney::set_doubled_domain()
     doubled_domain_sptr = Rectangular_grid_domain_sptr(
             new Rectangular_grid_domain(doubled_size,
                     domain_sptr->get_physical_offset(), doubled_grid_shape,
-                    periodic_z));
-}
-
-void
-Space_charge_3d_open_hockney::set_fixed_domain(
-        Rectangular_grid_domain_sptr domain_sptr)
-{
-    if ((domain_sptr->get_grid_shape()[0] != grid_shape[0])
-            || (domain_sptr->get_grid_shape()[1] != grid_shape[1])
-            || (domain_sptr->get_grid_shape()[2] != grid_shape[2])) {
-        throw runtime_error(
-                "Space_charge_3d_open_hockney::set_fixed_domain requires a shape\nequal to that of the parent object, but with zyx ordering.");
-    }
-    this->domain_sptr = domain_sptr;
-    set_doubled_domain();
-    domain_fixed = true;
-    have_domains = true;
+                    false));
 }
 
 // get_smallest_non_tiny is a local function
@@ -329,26 +184,6 @@ Space_charge_3d_open_hockney::update_domain(Bunch const& bunch)
     }
 }
 
-Rectangular_grid_domain_sptr
-Space_charge_3d_open_hockney::get_domain_sptr() const
-{
-    if (!have_domains) {
-        throw runtime_error(
-                "Space_charge_3d_open_hockney::get_domain_sptr: domain not set");
-    }
-    return domain_sptr;
-}
-
-Rectangular_grid_domain_sptr
-Space_charge_3d_open_hockney::get_doubled_domain_sptr() const
-{
-    if (!have_domains) {
-        throw runtime_error(
-                "Space_charge_3d_open_hockney::get_doubled_domain_sptr: domain not set");
-    }
-    return doubled_domain_sptr;
-}
-
 Rectangular_grid_sptr
 Space_charge_3d_open_hockney::get_local_charge_density(Bunch const& bunch)
 {
@@ -364,54 +199,6 @@ t = simple_timer_show(t, "sc-local-rho-deposit");
     return local_rho_sptr;
 }
 
-Distributed_rectangular_grid_sptr
-Space_charge_3d_open_hockney::get_global_charge_density2_reduce_scatter(
-        Rectangular_grid const& local_charge_density, Commxx_sptr comm_sptr)
-{
-    setup_communication(comm_sptr);
-// jfa: here is where we do something complicated, but (potentially) efficient
-// in calculating a version of the charge density that is just global enough
-// to fill in the doubled global charge density
-
-    const double * source = local_charge_density.get_grid_points().origin();
-
-    double * dest;
-// dest_array stores the portion of global charge density needed on each
-// processor. It has to have the same shape in the non-distributed dimensions
-// as the charge density in order to work with MPI_Reduce_scatter.
-    MArray3d dest_array(boost::extents[1][1][1]);
-    if (real_length > 0) {
-        dest_array.resize(
-                boost::extents[extent_range(real_lower, real_upper)][grid_shape[1]][grid_shape[2]]);
-    }
-    dest = multi_array_offset(dest_array, real_lower, 0, 0);
-    int error = MPI_Reduce_scatter((void *) source, (void *) dest,
-            &real_lengths[0], MPI_DOUBLE, MPI_SUM, comm_sptr->get());
-    if (error != MPI_SUCCESS) {
-        throw std::runtime_error(
-                "MPI error in Space_charge_3d_open_hockney::get_global_charge_density2_reduce_scatter");
-    }
-    Distributed_rectangular_grid_sptr rho2 = Distributed_rectangular_grid_sptr(
-            new Distributed_rectangular_grid(doubled_domain_sptr, doubled_lower,
-                    doubled_upper,
-                    distributed_fft3d_sptr->get_padded_shape_real(),
-                    comm_sptr));
-    for (int i = rho2->get_lower(); i < rho2->get_upper(); ++i) {
-        for (int j = 0; j < doubled_grid_shape[1]; ++j) {
-            for (int k = 0; k < doubled_grid_shape[2]; ++k) {
-                rho2->get_grid_points()[i][j][k] = 0.0;
-            }
-        }
-    }
-    for (int i = real_lower; i < real_upper; ++i) {
-        for (int j = 0; j < grid_shape[1]; ++j) {
-            for (int k = 0; k < grid_shape[2]; ++k) {
-                rho2->get_grid_points()[i][j][k] = dest_array[i][j][k];
-            }
-        }
-    }
-    return rho2;
-}
 
 Distributed_rectangular_grid_sptr
 Space_charge_3d_open_hockney::get_global_charge_density2_allreduce(
@@ -453,17 +240,8 @@ Distributed_rectangular_grid_sptr
 Space_charge_3d_open_hockney::get_global_charge_density2(
         Rectangular_grid const& local_charge_density, Commxx_sptr comm_sptr)
 {
-    switch (charge_density_comm) {
-    case reduce_scatter:
-        return get_global_charge_density2_reduce_scatter(local_charge_density,
-                comm_sptr);
-    case charge_allreduce:
-        return get_global_charge_density2_allreduce(local_charge_density,
-                comm_sptr);
-    default:
-        throw runtime_error(
-                "Space_charge_3d_open_hockney: invalid charge_density_comm");
-    }
+    return get_global_charge_density2_allreduce(local_charge_density,
+            comm_sptr);
 }
 
 Distributed_rectangular_grid_sptr
@@ -534,24 +312,6 @@ Space_charge_3d_open_hockney::get_green_fn2_pointlike()
                 } else {
                     G = 1.0 / sqrt(dx * dx + dy * dy + dz * dz);
                 }
-                if (periodic_z) {
-                    for (int image = -num_images; image <= num_images;
-                            ++image) {
-                        if (image != 0) {
-                            double dz_image = dz + image * z_period;
-                            const double tiny = 1.0e-9;
-                            if ((ix == 0) && (iy == 0)
-                                    && (std::abs(dz_image) < tiny)) {
-                                G += G000;
-                            } else {
-                                G += 1.0
-                                        / sqrt(
-                                                dx * dx + dy * dy
-                                                        + dz_image * dz_image);
-                            }
-                        }
-                    }
-                }
                 G2->get_grid_points()[iz][iy][ix] = G;
                 // three mirror images
                 G2->get_grid_points()[iz][miy][ix] = G;
@@ -562,184 +322,6 @@ Space_charge_3d_open_hockney::get_green_fn2_pointlike()
     }
 
     G2->set_normalization(1.0);
-
-    return G2;
-}
-
-Distributed_rectangular_grid_sptr
-Space_charge_3d_open_hockney::get_green_fn2_linear()
-{
-    if (doubled_domain_sptr == NULL) {
-        throw runtime_error(
-                "Space_charge_3d_open_hockney::get_green_fn2_linear called before domain specified");
-    }
-    int lower = distributed_fft3d_sptr->get_lower();
-    int upper = distributed_fft3d_sptr->get_upper();
-    Distributed_rectangular_grid_sptr G2 = Distributed_rectangular_grid_sptr(
-            new Distributed_rectangular_grid(doubled_domain_sptr, lower, upper,
-                    distributed_fft3d_sptr->get_padded_shape_real(),
-                    comm2_sptr));
-
-    double hx = domain_sptr->get_cell_size()[2];
-    double hy = domain_sptr->get_cell_size()[1];
-    double hz = domain_sptr->get_cell_size()[0];
-
-    double rr = hx * hx + hy * hy;
-    double r1 = sqrt(hx * hx + hy * hy + hz * hz);
-    double G000 = (2.0 / rr)
-            * (hz * r1 + rr * log((hz + r1) / sqrt(rr)) - hz * hz); // average value of outer cylinder.
-
-    int gz = grid_shape[0];
-    int gy = grid_shape[1];
-    int gx = grid_shape[2];
-
-    int dgz = doubled_grid_shape[0];
-    int dgy = doubled_grid_shape[1];
-    int dgx = doubled_grid_shape[2];
-
-    const int num_images = 8;
-    int mix, miy; // mirror indices for x- and y-planes
-    double x, y, z, G;
-    const double epsz = 1.0e-12 * hz;
-
-    #pragma omp parallel for default(none), \
-        private( x, y, z, G, mix, miy, rr ), \
-        shared( gx, gy, gz, dgx, dgy, dgz, hx, hy, hz, G000, lower, upper, G2 )
-    for (int iz = lower; iz < upper; ++iz) {
-        z = (iz>gz) ? (dgz-iz)*hz : iz*hz;
-
-        for (int iy = 0; iy <= gy; ++iy) {
-            y = iy * hy;
-            miy = (iy==gy) ? dgy : (dgy-iy);
-
-            for (int ix = 0; ix <= gx; ++ix) {
-                x = ix * hx;
-                rr = x * x + y * y;
-                mix = (ix==gx) ? dgx : (dgx-ix);
-
-                G = 2.0 * sqrt(rr + z * z) - sqrt(rr + (z - hz) * (z - hz))
-                        - sqrt(rr + (z + hz) * (z + hz));
-                double T1, T2, r1, r2;
-                if (z < -hz) {
-                    r1 = (sqrt((z - hz) * (z - hz) + rr) - z + hz)
-                            / (sqrt(z * z + rr) - z);
-                    T1 = (hz - z) * log(r1);
-                    r2 = (sqrt(z * z + rr) - z)
-                            / (sqrt((z + hz) * (z + hz) + rr) - z - hz);
-                    T2 = (hz + z) * log(r2);
-                    G += T1 + T2;
-                } else if (std::abs(z + hz) < epsz) {
-                    r1 = (sqrt((z - hz) * (z - hz) + rr) - z + hz)
-                            / (sqrt(z * z + rr) - z);
-                    T1 = (hz - z) * log(r1);
-                    G += T1;
-                } else if (std::abs(z) < epsz) {
-                    if (std::abs(x) + std::abs(y) < 2. * epsz) {
-                        G += hz * G000;
-                    } /* T1+T2 in fact */else {
-                        r1 = (sqrt(hz * hz + rr) + hz) / sqrt(rr);
-                        G += 2. * hz * log(r1);
-                    }
-                } else if (std::abs(z - hz) < epsz) {
-                    r1 = (sqrt((z + hz) * (z + hz) + rr) + z + hz)
-                            / (sqrt(z * z + rr) + z);
-                    T1 = (hz + z) * log(r1);
-                    G += T1;
-                } else if (z > hz) {
-                    r1 = (sqrt(z * z + rr) + z)
-                            / (sqrt((z - hz) * (z - hz) + rr) + z - hz);
-                    T1 = (hz - z) * log(r1);
-                    r2 = (sqrt((z + hz) * (z + hz) + rr) + z + hz)
-                            / (sqrt(z * z + rr) + z);
-                    T2 = (hz + z) * log(r2);
-                    G += T1 + T2;
-                } else {
-                    throw std::runtime_error(
-                            "Space_charge_3d_open_hockney::get_green_fn2 error1");
-                }
-
-                if (periodic_z) {
-                    throw std::runtime_error(
-                            "Space_charge_3d_open_hockney::get_green_fn2_linear: periodic_z not yet implemented");
-                    for (int image = -num_images; image < num_images; ++image) {
-                        if (image != 0) {
-                            double z_image = z + image * z_period;
-
-                            if (z_image < -hz) {
-                                r1 = (sqrt((z_image - hz) * (z_image - hz) + rr)
-                                        - z_image + hz)
-                                        / (sqrt(z_image * z_image + rr)
-                                                - z_image);
-                                T1 = (hz - z_image) * log(r1);
-                                r2 = (sqrt(z_image * z_image + rr) - z_image)
-                                        / (sqrt(
-                                                (z_image + hz) * (z_image + hz)
-                                                        + rr) - z_image - hz);
-                                T2 = (hz + z_image) * log(r2);
-                                G += T1 + T2;
-                            }
-
-                            else if (std::abs(z_image + hz) < epsz) {
-                                r1 = (sqrt((z_image - hz) * (z_image - hz) + rr)
-                                        - z_image + hz)
-                                        / (sqrt(z_image * z_image + rr)
-                                                - z_image);
-                                T1 = (hz - z_image) * log(r1);
-                                G += T1;
-                            }
-
-                            else if (std::abs(z_image) < epsz) {
-                                if (std::abs(x) + std::abs(y) < 2. * epsz) {
-                                    G += hz * G000;
-                                } // T1+T2 in fact
-                                else {
-                                    r1 = (sqrt(hz * hz + rr) + hz) / sqrt(rr);
-                                    G += 2. * hz * log(r1);
-                                }
-                            } else if (std::abs(z_image - hz) < epsz) {
-                                r1 = (sqrt((z_image + hz) * (z_image + hz) + rr)
-                                        + z_image + hz)
-                                        / (sqrt(z_image * z_image + rr)
-                                                + z_image);
-                                T1 = (hz + z_image) * log(r1);
-                                G += T1;
-                            } else if (z_image > hz) {
-                                r1 = (sqrt(z_image * z_image + rr) + z_image)
-                                        / (sqrt(
-                                                (z_image - hz) * (z_image - hz)
-                                                        + rr) + z_image - hz);
-                                T1 = (hz - z_image) * log(r1);
-                                r2 = (sqrt((z_image + hz) * (z_image + hz) + rr)
-                                        + z_image + hz)
-                                        / (sqrt(z_image * z_image + rr)
-                                                + z_image);
-                                T2 = (hz + z_image) * log(r2);
-                                G += T1 + T2;
-                            } else {
-                                throw std::runtime_error(
-                                        "Space_charge_3d_open_hockney::get_green_fn2 error2");
-                            }
-
-                        }
-                    }
-                }
-
-                G2->get_grid_points()[iz][iy][ix] = G;
-                // three mirror images
-                if (miy < doubled_grid_shape[1]) {
-                    G2->get_grid_points()[iz][miy][ix] = G;
-                    if (mix < doubled_grid_shape[2]) {
-                        G2->get_grid_points()[iz][miy][mix] = G;
-                    }
-                }
-                if (mix < doubled_grid_shape[2]) {
-                    G2->get_grid_points()[iz][iy][mix] = G;
-                }
-            }
-        }
-    }
-
-    G2->set_normalization(1.0 / (hz * hz));
 
     return G2;
 }
@@ -892,70 +474,6 @@ Space_charge_3d_open_hockney::get_electric_field_component(
 }
 
 Rectangular_grid_sptr
-Space_charge_3d_open_hockney::get_global_electric_field_component_gatherv_bcast(
-        Distributed_rectangular_grid const& dist_field)
-{
-    Rectangular_grid_sptr global_field(new Rectangular_grid(domain_sptr));
-    const int root = 0;
-    int error;
-    if (comm1_sptr->has_this_rank()) {
-        int rank = comm1_sptr->get_rank();
-        error =
-                MPI_Gatherv(
-                        (void *) (dist_field.get_grid_points().origin()
-                                + lowers1[rank]), lengths1[rank], MPI_DOUBLE,
-                        (void*) global_field->get_grid_points().origin(),
-                        &lengths1[0], &lowers1[0], MPI_DOUBLE, root,
-                        comm1_sptr->get());
-        if (error != MPI_SUCCESS) {
-            throw std::runtime_error(
-                    "MPI error in Space_charge_3d_open_hockney(MPI_Gatherv)");
-        }
-
-    }
-    int total_length = grid_shape[0] * grid_shape[1] * grid_shape[2];
-    error = MPI_Bcast(global_field->get_grid_points().origin(), total_length,
-            MPI_DOUBLE, root, comm2_sptr->get());
-    if (error != MPI_SUCCESS) {
-        throw std::runtime_error(
-                "MPI error in Space_charge_3d_open_hockney(MPI_Bcast)");
-    }
-    global_field->set_normalization(dist_field.get_normalization());
-    return global_field;
-}
-
-Rectangular_grid_sptr
-Space_charge_3d_open_hockney::get_global_electric_field_component_allgatherv(
-        Distributed_rectangular_grid const& dist_field)
-{
-    Rectangular_grid_sptr global_field(new Rectangular_grid(domain_sptr));
-    std::vector<int > lowers12(comm2_sptr->get_size()); // lowers1 on comm2
-    std::vector<int > lengths12(comm2_sptr->get_size()); // lengths1 on comm2
-    int size1 = lowers1.size();
-    for (int rank = 0; rank < comm2_sptr->get_size(); ++rank) {
-        if (rank < size1) {
-            lowers12[rank] = lowers1[rank];
-            lengths12[rank] = lengths1[rank];
-        } else {
-            lowers12[rank] = 0;
-            lengths12[rank] = 0;
-        }
-    }
-    int rank = comm2_sptr->get_rank();
-    int error = MPI_Allgatherv(
-            (void *) (dist_field.get_grid_points().origin() + lowers12[rank]),
-            lengths12[rank], MPI_DOUBLE,
-            (void*) global_field->get_grid_points().origin(), &lengths12[0],
-            &lowers12[0], MPI_DOUBLE, comm2_sptr->get());
-    if (error != MPI_SUCCESS) {
-        throw std::runtime_error(
-                "MPI error in Space_charge_3d_open_hockney(MPI_Allgatherv)");
-    }
-    global_field->set_normalization(dist_field.get_normalization());
-    return global_field;
-}
-
-Rectangular_grid_sptr
 Space_charge_3d_open_hockney::get_global_electric_field_component_allreduce(
         Distributed_rectangular_grid const& dist_field)
 {
@@ -991,17 +509,7 @@ Rectangular_grid_sptr
 Space_charge_3d_open_hockney::get_global_electric_field_component(
         Distributed_rectangular_grid const& dist_field)
 {
-    switch (e_field_comm) {
-    case gatherv_bcast:
-        return get_global_electric_field_component_gatherv_bcast(dist_field);
-    case allgatherv:
-        return get_global_electric_field_component_allgatherv(dist_field);
-    case e_field_allreduce:
-        return get_global_electric_field_component_allreduce(dist_field);
-    default:
-        throw runtime_error(
-                "Space_charge_3d_open_hockney: invalid e_field_comm");
-    }
+     return get_global_electric_field_component_allreduce(dist_field);
 }
 
 void
@@ -1059,14 +567,7 @@ Space_charge_3d_open_hockney::apply(Bunch & bunch, double time_step,
         t = simple_timer_show(t, "sc-get-global-rho");
         local_rho.reset();
         Distributed_rectangular_grid_sptr G2; // [1/m]
-        if (green_fn_type == pointlike) {
-            G2 = get_green_fn2_pointlike();
-        } else if (green_fn_type == linear) {
-            G2 = get_green_fn2_linear();
-        } else {
-            throw std::runtime_error(
-                    "Space_charge_3d_open_hockney::apply: unknown green_fn_type");
-        }
+        G2 = get_green_fn2_pointlike();
         t = simple_timer_show(t, "sc-get-green-fn");
         Distributed_rectangular_grid_sptr phi2(get_scalar_field2(*rho2, *G2)); // [V]
         t = simple_timer_show(t, "sc-get-phi2");
@@ -1095,69 +596,6 @@ Space_charge_3d_open_hockney::apply(Bunch & bunch, double time_step,
         }
     }
 }
-
-template<class Archive>
-    void
-    Space_charge_3d_open_hockney::save(Archive & ar,
-            const unsigned int version) const
-    {
-        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Collective_operator);
-        ar & BOOST_SERIALIZATION_NVP(comm2_sptr)
-        & BOOST_SERIALIZATION_NVP(commxx_divider_sptr)
-        & BOOST_SERIALIZATION_NVP(grid_shape)
-        & BOOST_SERIALIZATION_NVP(doubled_grid_shape)
-        & BOOST_SERIALIZATION_NVP(longitudinal_kicks)
-        & BOOST_SERIALIZATION_NVP(periodic_z)
-        & BOOST_SERIALIZATION_NVP(z_period)
-        & BOOST_SERIALIZATION_NVP(grid_entire_period)
-        & BOOST_SERIALIZATION_NVP(n_sigma)
-        & BOOST_SERIALIZATION_NVP(domain_fixed)
-        & BOOST_SERIALIZATION_NVP(have_domains)
-        & BOOST_SERIALIZATION_NVP(green_fn_type)
-        & BOOST_SERIALIZATION_NVP(charge_density_comm)
-        & BOOST_SERIALIZATION_NVP(e_field_comm);
-    }
-template<class Archive>
-    void
-    Space_charge_3d_open_hockney::load(Archive & ar, const unsigned int version)
-    {
-        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Collective_operator);
-        ar & BOOST_SERIALIZATION_NVP(comm2_sptr)
-        & BOOST_SERIALIZATION_NVP(commxx_divider_sptr)
-        & BOOST_SERIALIZATION_NVP(grid_shape)
-        & BOOST_SERIALIZATION_NVP(doubled_grid_shape)
-        & BOOST_SERIALIZATION_NVP(longitudinal_kicks)
-        & BOOST_SERIALIZATION_NVP(periodic_z)
-        & BOOST_SERIALIZATION_NVP(z_period)
-        & BOOST_SERIALIZATION_NVP(grid_entire_period)
-        & BOOST_SERIALIZATION_NVP(n_sigma)
-        & BOOST_SERIALIZATION_NVP(domain_fixed)
-        & BOOST_SERIALIZATION_NVP(have_domains)
-        & BOOST_SERIALIZATION_NVP(green_fn_type)
-        & BOOST_SERIALIZATION_NVP(charge_density_comm)
-        & BOOST_SERIALIZATION_NVP(e_field_comm);
-        if (comm2_sptr) {
-            setup_derived_communication();
-        }
-    }
-
-template
-void
-Space_charge_3d_open_hockney::save<boost::archive::binary_oarchive >(
-        boost::archive::binary_oarchive & ar, const unsigned int version) const;
-template
-void
-Space_charge_3d_open_hockney::save<boost::archive::xml_oarchive >(
-        boost::archive::xml_oarchive & ar, const unsigned int version) const;
-
-template
-void
-Space_charge_3d_open_hockney::load<boost::archive::binary_iarchive >(
-        boost::archive::binary_iarchive & ar, const unsigned int version);
-template
-void
-Space_charge_3d_open_hockney::load<boost::archive::xml_iarchive >(
-        boost::archive::xml_iarchive & ar, const unsigned int version);
 
 Space_charge_3d_open_hockney::~Space_charge_3d_open_hockney()
 {
