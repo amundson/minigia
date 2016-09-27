@@ -8,6 +8,7 @@
 #include "gsvector.h"
 
 const int particles_per_rank = 100000;
+const double real_particles = 1.0e12;
 
 const double dummy_length = 2.1;
 const double dummy_reference_time = 0.345;
@@ -182,8 +183,9 @@ run_check(void (*propagator)(Bunch&, drift&), const char* name, drift& thedrift,
 {
     const double tolerance = 1.0e-14;
     const int num_test = 104 * size;
-    Bunch b1(num_test * size, size, rank);
-    Bunch b2(num_test * size, size, rank);
+    const double real_num = 1.0e12;
+    Bunch b1(num_test * size, real_num, size, rank);
+    Bunch b2(num_test * size, real_num, size, rank);
     propagate_orig(b1, thedrift);
     propagator(b2, thedrift);
     if (!check_equal(b1, b2, tolerance)) {
@@ -202,7 +204,7 @@ run()
         exit(error);
     }
 
-    Bunch bunch(size * particles_per_rank, size, rank);
+    Bunch bunch(size * particles_per_rank, real_particles, size, rank);
     drift thedrift;
 
     double reference_timing =

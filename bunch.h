@@ -41,14 +41,17 @@ private:
     Reference_particle reference_particle;
     double* storage;
     MArray2d_ref* local_particles;
-    int local_num;
+    int local_num, total_num;
+    double real_num;
     Commxx_sptr comm_sptr;
     AView aview;
 
 public:
-    Bunch(int total_num, int mpi_size, int mpi_rank)
+    Bunch(int total_num, double real_num, int mpi_size, int mpi_rank)
         : reference_particle(proton_charge, proton_mass,
                              example_gamma * proton_mass),
+          total_num(total_num),
+          real_num(real_num),
           comm_sptr(new Commxx)
     {
         local_num = total_num / mpi_size;
@@ -93,6 +96,10 @@ public:
 
     int get_local_num() const { return local_num; }
 
+    int get_total_num() const { return total_num; }
+
+    double get_real_num() const { return real_num; }
+
     Commxx_sptr get_comm_sptr() const { return comm_sptr; }
 
     void set_arrays(double* RESTRICT& xa, double* RESTRICT& xpa,
@@ -121,7 +128,7 @@ public:
     }
 };
 
-bool
+inline bool
 floating_point_equal(double a, double b, double tolerance)
 {
     if (std::abs(a) < tolerance) {
@@ -131,7 +138,7 @@ floating_point_equal(double a, double b, double tolerance)
     }
 }
 
-bool
+inline bool
 multi_array_check_equal(MArray2d_ref const& a, MArray2d_ref const& b,
                         double tolerance)
 {
@@ -154,7 +161,7 @@ multi_array_check_equal(MArray2d_ref const& a, MArray2d_ref const& b,
     return true;
 }
 
-bool
+inline bool
 check_equal(Bunch& b1, Bunch& b2, double tolerance)
 {
     if (b1.get_local_num() != b2.get_local_num()) {
