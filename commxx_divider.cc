@@ -1,5 +1,4 @@
 #include "commxx_divider.h"
-#include "containers_to_string.h"
 #include <stdexcept>
 
 Commxx_divider::Commxx_divider() :
@@ -40,35 +39,6 @@ Commxx_divider::get_commxx_sptr(Commxx_sptr const& parent)
     }
     return retval;
 }
-
-template<class Archive>
-    void
-    Commxx_divider::serialize(Archive & ar, const unsigned int version)
-{
-    ar & BOOST_SERIALIZATION_NVP(cache);
-    ar & BOOST_SERIALIZATION_NVP(subsize);
-    ar & BOOST_SERIALIZATION_NVP(per_host);
-}
-
-template
-void
-Commxx_divider::serialize<boost::archive::binary_oarchive >(
-        boost::archive::binary_oarchive & ar, const unsigned int version);
-
-template
-void
-Commxx_divider::serialize<boost::archive::xml_oarchive >(
-        boost::archive::xml_oarchive & ar, const unsigned int version);
-
-template
-void
-Commxx_divider::serialize<boost::archive::binary_iarchive >(
-        boost::archive::binary_iarchive & ar, const unsigned int version);
-
-template
-void
-Commxx_divider::serialize<boost::archive::xml_iarchive >(
-        boost::archive::xml_iarchive & ar, const unsigned int version);
 
 
 Commxx_divider::~Commxx_divider()

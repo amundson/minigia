@@ -4,6 +4,7 @@
 #include <iostream>
 #include "multi_array_typedefs.h"
 #include "reference_particle.h"
+#include "commxx.h"
 #include "restrict_extension.h"
 
 //  J. Beringer et al. (Particle Data Group), PR D86, 010001 (2012) and 2013
@@ -41,12 +42,14 @@ private:
     double* storage;
     MArray2d_ref* local_particles;
     int local_num;
+    Commxx_sptr comm_sptr;
     AView aview;
 
 public:
     Bunch(int total_num, int mpi_size, int mpi_rank)
         : reference_particle(proton_charge, proton_mass,
-                             example_gamma * proton_mass)
+                             example_gamma * proton_mass),
+          comm_sptr(new Commxx)
     {
         local_num = total_num / mpi_size;
         storage =
@@ -84,9 +87,13 @@ public:
 
     MArray2d_ref get_local_particles() { return *local_particles; }
 
+    Const_MArray2d_ref get_local_particles() const { return *local_particles; }
+
     double get_mass() const { return reference_particle.get_mass(); }
 
     int get_local_num() const { return local_num; }
+
+    Commxx_sptr get_comm_sptr() const { return comm_sptr; }
 
     void set_arrays(double* RESTRICT& xa, double* RESTRICT& xpa,
                     double* RESTRICT& ya, double* RESTRICT& ypa,

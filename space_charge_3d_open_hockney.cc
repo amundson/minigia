@@ -1,6 +1,7 @@
 #include "space_charge_3d_open_hockney.h"
 
 #include <stdexcept>
+#include <cstring>
 
 #include "core_diagnostics.h"
 #include "math_constants.h"
@@ -159,15 +160,10 @@ Space_charge_3d_open_hockney::update_domain(Bunch const& bunch)
             throw std::runtime_error(
                     "Space_charge_3d_open_hockney::update_domain: all three spatial dimensions have neglible extent");
         }
-        if (grid_entire_period) {
-            offset[0] = 0.0;
-            size[0] = z_period;
-        } else {
-            offset[0] = mean[Bunch::z];
-            size[0] = n_sigma
-                    * get_smallest_non_tiny(std[Bunch::z], std[Bunch::x],
-                            std[Bunch::y], tiny);
-        }
+        offset[0] = mean[Bunch::z];
+        size[0] = n_sigma
+                * get_smallest_non_tiny(std[Bunch::z], std[Bunch::x],
+                        std[Bunch::y], tiny);
         offset[1] = mean[Bunch::y];
         size[1] = n_sigma
                 * get_smallest_non_tiny(std[Bunch::y], std[Bunch::x],
@@ -178,7 +174,7 @@ Space_charge_3d_open_hockney::update_domain(Bunch const& bunch)
                         std[Bunch::z], tiny);
         domain_sptr = Rectangular_grid_domain_sptr(
                 new Rectangular_grid_domain(size, offset, grid_shape,
-                        periodic_z));
+                        false));
         set_doubled_domain();
         have_domains = true;
     }
@@ -248,7 +244,7 @@ Distributed_rectangular_grid_sptr
 Space_charge_3d_open_hockney::get_green_fn2_pointlike()
 {
     if (doubled_domain_sptr == NULL) {
-        throw runtime_error(
+        throw std::runtime_error(
                 "Space_charge_3d_open_hockney::get_green_fn2_pointlike called before domain specified");
     }
     int lower = distributed_fft3d_sptr->get_lower();
@@ -517,7 +513,7 @@ Space_charge_3d_open_hockney::apply_kick(Bunch & bunch,
         Rectangular_grid const& En, double delta_t, int component)
 {
 // $\delta \vec{p} = \vec{F} \delta t = q \vec{E} \delta t$
-    double q = bunch.get_particle_charge() * pconstants::e; // [C]
+    double q = bunch.get_reference_particle().get_charge() * pconstants::e; // [C]
 // delta_t_beam: [s] in beam frame
     double delta_t_beam = delta_t / bunch.get_reference_particle().get_gamma();
 // unit_conversion: [kg m/s] to [Gev/c]
@@ -544,61 +540,46 @@ Space_charge_3d_open_hockney::apply_kick(Bunch & bunch,
 
 void
 Space_charge_3d_open_hockney::apply(Bunch & bunch, double time_step,
-        Step & step, int verbosity, Logger & logger)
+        int verbosity)
 {
-    if (bunch.get_total_num() > 1) {
-        double t = simple_timer_current();
-        setup_communication(bunch.get_comm_sptr());
-        int comm_compare;
-        MPI_Comm_compare(comm2_sptr->get(), bunch.get_comm().get(),
-                &comm_compare);
-        if ((comm_compare == MPI_UNEQUAL)
-                && (charge_density_comm != charge_allreduce)) {
-            throw std::runtime_error(
-                    "Space_charge_3d_open_hockney: set_charge_density_comm(charge_allreduce) required when comm != bunch comm");
-        }
-        t = simple_timer_show(t, "sc-setup-communication");
-        bunch.convert_to_state(Bunch::fixed_t_bunch);
-        t = simple_timer_show(t, "sc-convert-to-state");
-        Rectangular_grid_sptr local_rho(get_local_charge_density(bunch)); // [C/m^3]
-        t = simple_timer_show(t, "sc-get-local-rho");
-        Distributed_rectangular_grid_sptr rho2(
-                get_global_charge_density2(*local_rho, bunch.get_comm_sptr())); // [C/m^3]
-        t = simple_timer_show(t, "sc-get-global-rho");
-        local_rho.reset();
-        Distributed_rectangular_grid_sptr G2; // [1/m]
-        G2 = get_green_fn2_pointlike();
-        t = simple_timer_show(t, "sc-get-green-fn");
-        Distributed_rectangular_grid_sptr phi2(get_scalar_field2(*rho2, *G2)); // [V]
-        t = simple_timer_show(t, "sc-get-phi2");
-        rho2.reset();
-        G2.reset();
-        Distributed_rectangular_grid_sptr phi(extract_scalar_field(*phi2));
-        t = simple_timer_show(t, "sc-get-phi");
-        bunch.periodic_sort(Bunch::z);
-        t = simple_timer_show(t, "sc-sort");
-        phi2.reset();
-        int max_component;
-        if (longitudinal_kicks) {
-            max_component = 3;
-        } else {
-            max_component = 2;
-        }
-        for (int component = 0; component < max_component; ++component) {
-            Distributed_rectangular_grid_sptr local_En(
-                    get_electric_field_component(*phi, component)); // [V/m]
-            t = simple_timer_show(t, "sc-get-local-en");
-            Rectangular_grid_sptr En(
-                    get_global_electric_field_component(*local_En)); // [V/m]
-            t = simple_timer_show(t, "sc-get-global-en");
-            apply_kick(bunch, *En, time_step, component);
-            t = simple_timer_show(t, "sc-apply-kick");
-        }
+    double t = simple_timer_current();
+    setup_communication(bunch.get_comm_sptr());
+    int comm_compare;
+    t = simple_timer_show(t, "sc-setup-communication");
+//    bunch.convert_to_state(Bunch::fixed_t_bunch);
+    t = simple_timer_show(t, "sc-convert-to-state");
+    Rectangular_grid_sptr local_rho(get_local_charge_density(bunch)); // [C/m^3]
+    t = simple_timer_show(t, "sc-get-local-rho");
+    Distributed_rectangular_grid_sptr rho2(
+            get_global_charge_density2(*local_rho, bunch.get_comm_sptr())); // [C/m^3]
+    t = simple_timer_show(t, "sc-get-global-rho");
+    local_rho.reset();
+    Distributed_rectangular_grid_sptr G2; // [1/m]
+    G2 = get_green_fn2_pointlike();
+    t = simple_timer_show(t, "sc-get-green-fn");
+    Distributed_rectangular_grid_sptr phi2(get_scalar_field2(*rho2, *G2)); // [V]
+    t = simple_timer_show(t, "sc-get-phi2");
+    rho2.reset();
+    G2.reset();
+    Distributed_rectangular_grid_sptr phi(extract_scalar_field(*phi2));
+    t = simple_timer_show(t, "sc-get-phi");
+//    bunch.periodic_sort(Bunch::z);
+    t = simple_timer_show(t, "sc-sort");
+    phi2.reset();
+    int max_component;
+    max_component = 2;
+    for (int component = 0; component < max_component; ++component) {
+        Distributed_rectangular_grid_sptr local_En(
+                get_electric_field_component(*phi, component)); // [V/m]
+        t = simple_timer_show(t, "sc-get-local-en");
+        Rectangular_grid_sptr En(
+                get_global_electric_field_component(*local_En)); // [V/m]
+        t = simple_timer_show(t, "sc-get-global-en");
+        apply_kick(bunch, *En, time_step, component);
+        t = simple_timer_show(t, "sc-apply-kick");
     }
 }
 
 Space_charge_3d_open_hockney::~Space_charge_3d_open_hockney()
 {
 }
-BOOST_CLASS_EXPORT_IMPLEMENT(Space_charge_3d_open_hockney)
-
