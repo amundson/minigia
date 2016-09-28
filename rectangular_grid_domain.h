@@ -16,19 +16,20 @@ private:
     std::vector<double> left;
     std::vector<double> cell_size;
 
+    void update();
 public:
+    Rectangular_grid_domain(std::vector<int> const& grid_shape,
+                            bool periodic_z);
     Rectangular_grid_domain(std::vector<double> const& physical_size,
                             std::vector<double> const& physical_offset,
                             std::vector<int> const& grid_shape,
                             bool periodic_z);
     Rectangular_grid_domain(std::vector<double> const& physical_size,
-                            std::vector<double> const& physical_offset,
-                            std::vector<int> const& grid_shape);
-
-    Rectangular_grid_domain(std::vector<double> const& physical_size,
                             std::vector<int> const& grid_shape,
                             bool periodic_z);
 
+    void set_physical_size(std::vector<double> const& size);
+    void set_physical_offset(std::vector<double> const& offset);
     std::vector<double> const& get_physical_size() const;
     std::vector<double> const& get_physical_offset() const;
     std::vector<int> const& get_grid_shape() const;
