@@ -6,6 +6,8 @@
 #include <string>
 #endif // USE_SIMPLE_TIMER_MEM
 
+#define USE_SIMPLE_TIMER you_betcha
+
 inline double
 simple_timer_current()
 {
