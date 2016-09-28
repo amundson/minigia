@@ -1,7 +1,7 @@
 #include "core_diagnostics.h"
+#include "synergia/utils/simple_timer.h"
 #include <cmath>
 #include <stdexcept>
-#include "synergia/utils/simple_timer.h"
 
 MArray1d
 Core_diagnostics::calculate_mean(Bunch const& bunch)
@@ -17,7 +17,7 @@ Core_diagnostics::calculate_mean(Bunch const& bunch)
     double t;
     t = simple_timer_current();
     MPI_Allreduce(sum, mean.origin(), 6, MPI_DOUBLE, MPI_SUM,
-            bunch.get_comm_sptr()->get());
+                  bunch.get_comm_sptr()->get());
     t = simple_timer_show(t, "allmpireduce_in_diagnostic mean");
 
     for (int i = 0; i < 6; ++i) {
@@ -35,7 +35,8 @@ Core_diagnostics::calculate_z_mean(Bunch const& bunch)
     for (int part = 0; part < bunch.get_local_num(); ++part) {
         sum += particles[part][4];
     }
-    MPI_Allreduce(&sum, &mean, 1, MPI_DOUBLE, MPI_SUM, bunch.get_comm_sptr()->get());
+    MPI_Allreduce(&sum, &mean, 1, MPI_DOUBLE, MPI_SUM,
+                  bunch.get_comm_sptr()->get());
     mean /= bunch.get_total_num();
     return mean;
 }
@@ -50,7 +51,8 @@ Core_diagnostics::calculate_z_std(Bunch const& bunch, double const& mean)
         double diff = particles[part][4] - mean;
         sum += diff * diff;
     }
-    MPI_Allreduce(&sum, &std, 1, MPI_DOUBLE, MPI_SUM, bunch.get_comm_sptr()->get());
+    MPI_Allreduce(&sum, &std, 1, MPI_DOUBLE, MPI_SUM,
+                  bunch.get_comm_sptr()->get());
     std = std::sqrt(std / bunch.get_total_num());
     return std;
 }
@@ -69,7 +71,7 @@ Core_diagnostics::calculate_spatial_mean(Bunch const& bunch)
     double t;
     t = simple_timer_current();
     MPI_Allreduce(sum, mean.origin(), 3, MPI_DOUBLE, MPI_SUM,
-            bunch.get_comm_sptr()->get());
+                  bunch.get_comm_sptr()->get());
     t = simple_timer_show(t, "allmpireduce_in_diagnostic mean");
 
     for (int i = 0; i < 3; ++i) {
@@ -91,7 +93,7 @@ Core_diagnostics::calculate_std(Bunch const& bunch, MArray1d_ref const& mean)
         }
     }
     MPI_Allreduce(sum, std.origin(), 6, MPI_DOUBLE, MPI_SUM,
-            bunch.get_comm_sptr()->get());
+                  bunch.get_comm_sptr()->get());
     for (int i = 0; i < 6; ++i) {
         std[i] = std::sqrt(std[i] / bunch.get_total_num());
     }
@@ -99,7 +101,8 @@ Core_diagnostics::calculate_std(Bunch const& bunch, MArray1d_ref const& mean)
 }
 
 MArray1d
-Core_diagnostics::calculate_spatial_std(Bunch const& bunch, MArray1d_ref const& mean)
+Core_diagnostics::calculate_spatial_std(Bunch const& bunch,
+                                        MArray1d_ref const& mean)
 {
     MArray1d std(boost::extents[3]);
     double sum[3] = { 0, 0, 0 };
@@ -111,7 +114,7 @@ Core_diagnostics::calculate_spatial_std(Bunch const& bunch, MArray1d_ref const& 
         }
     }
     MPI_Allreduce(sum, std.origin(), 3, MPI_DOUBLE, MPI_SUM,
-            bunch.get_comm_sptr()->get());
+                  bunch.get_comm_sptr()->get());
     for (int i = 0; i < 3; ++i) {
         std[i] = std::sqrt(std[i] / bunch.get_total_num());
     }
@@ -145,7 +148,7 @@ Core_diagnostics::calculate_mom2(Bunch const& bunch, MArray1d_ref const& mean)
         }
     }
     MPI_Allreduce(sum2.origin(), mom2.origin(), 36, MPI_DOUBLE, MPI_SUM,
-            bunch.get_comm_sptr()->get());
+                  bunch.get_comm_sptr()->get());
     for (int i = 0; i < 6; ++i) {
         for (int j = i; j < 6; ++j) {
             mom2[i][j] = mom2[j][i] = mom2[i][j] / bunch.get_total_num();
@@ -170,10 +173,9 @@ Core_diagnostics::calculate_min(Bunch const& bunch)
         if (particles[part][4] < lmin[2]) {
             lmin[2] = particles[part][4];
         }
-
     }
     MPI_Allreduce(lmin, min.origin(), 3, MPI_DOUBLE, MPI_MIN,
-            bunch.get_comm_sptr()->get());
+                  bunch.get_comm_sptr()->get());
 
     return min;
 }
@@ -194,10 +196,9 @@ Core_diagnostics::calculate_max(Bunch const& bunch)
         if (particles[part][4] > lmax[2]) {
             lmax[2] = particles[part][4];
         }
-
     }
     MPI_Allreduce(lmax, max.origin(), 3, MPI_DOUBLE, MPI_MAX,
-            bunch.get_comm_sptr()->get());
+                  bunch.get_comm_sptr()->get());
 
     return max;
 }

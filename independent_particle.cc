@@ -219,8 +219,7 @@ run()
                   << std::endl;
     }
     run_check(&propagate_gsv, "vectorized", thedrift, size, rank);
-    do_timing(&propagate_gsv, "vectorized", bunch, thedrift, opt_timing,
-              rank);
+    do_timing(&propagate_gsv, "vectorized", bunch, thedrift, opt_timing, rank);
 }
 
 int

@@ -1,16 +1,16 @@
 #include "commxx.h"
 #include "parallel_utils.h"
-#include <stdexcept>
 #include <climits>
+#include <stdexcept>
 
 // hash is a local function
 
 static size_t
-hash(const char * s)
+hash(const char* s)
 {
     size_t h = 37062913;
     while (*s)
-        h = h * 101 + (unsigned char) *s++;
+        h = h * 101 + (unsigned char)*s++;
     return h;
 }
 
@@ -36,7 +36,7 @@ Commxx::construct(MPI_Comm const& parent_mpi_comm)
         error = MPI_Group_free(&parent_group);
         if (error != MPI_SUCCESS) {
             throw std::runtime_error(
-                    "MPI error in Commxx(MPI_Group_free(parent))");
+                "MPI error in Commxx(MPI_Group_free(parent))");
         }
         error = MPI_Group_free(&group);
         if (error != MPI_SUCCESS) {
@@ -54,8 +54,8 @@ Commxx::construct(MPI_Comm const& parent_mpi_comm)
             }
         }
         if (this_rank != no_rank) {
-            for (std::vector<int >::const_iterator it = ranks.begin(); it
-                    != ranks.end(); ++it) {
+            for (std::vector<int>::const_iterator it = ranks.begin();
+                 it != ranks.end(); ++it) {
                 if ((*it) == this_rank) {
                     has_this_rank_ = true;
                 }
@@ -75,13 +75,13 @@ Commxx::construct(MPI_Comm const& parent_mpi_comm)
         int color = hash(name) % INT_MAX;
 
         int result = MPI_Comm_split(temp_comm, color, 0, &comm);
-        if (result != MPI_SUCCESS) throw std::runtime_error(
-                "MPI error in MPI_Comm_split");
+        if (result != MPI_SUCCESS)
+            throw std::runtime_error("MPI error in MPI_Comm_split");
         if (ranks.size() > 0) {
             error = MPI_Comm_free(&temp_comm);
             if (error != MPI_SUCCESS) {
                 throw std::runtime_error(
-                        "MPI error in Commxx(MPI_Comm_free(temp_comm))");
+                    "MPI error in Commxx(MPI_Comm_free(temp_comm))");
             }
         }
     } else {
@@ -89,27 +89,36 @@ Commxx::construct(MPI_Comm const& parent_mpi_comm)
     }
 }
 
-Commxx::Commxx() :
-        comm(MPI_COMM_WORLD ), per_host(false), ranks(0), parent_sptr(), has_this_rank_(
-                true)
+Commxx::Commxx()
+    : comm(MPI_COMM_WORLD)
+    , per_host(false)
+    , ranks(0)
+    , parent_sptr()
+    , has_this_rank_(true)
 {
 }
 
-Commxx::Commxx(bool per_host) :
-        per_host(per_host), ranks(0), parent_sptr()
+Commxx::Commxx(bool per_host)
+    : per_host(per_host)
+    , ranks(0)
+    , parent_sptr()
 {
-    construct(MPI_COMM_WORLD );
+    construct(MPI_COMM_WORLD);
 }
 
-Commxx::Commxx(Commxx_sptr parent_sptr, bool per_host) :
-        per_host(per_host), ranks(0), parent_sptr()
+Commxx::Commxx(Commxx_sptr parent_sptr, bool per_host)
+    : per_host(per_host)
+    , ranks(0)
+    , parent_sptr()
 {
     construct(parent_sptr->get());
 }
 
-Commxx::Commxx(Commxx_sptr parent_sptr, std::vector<int > const& ranks,
-        bool per_host) :
-        per_host(per_host), ranks(ranks), parent_sptr(parent_sptr)
+Commxx::Commxx(Commxx_sptr parent_sptr, std::vector<int> const& ranks,
+               bool per_host)
+    : per_host(per_host)
+    , ranks(ranks)
+    , parent_sptr(parent_sptr)
 {
     construct(parent_sptr->get());
 }
@@ -117,8 +126,8 @@ Commxx::Commxx(Commxx_sptr parent_sptr, std::vector<int > const& ranks,
 Commxx_sptr
 Commxx::get_parent_sptr() const
 {
-  return parent_sptr;
-}  
+    return parent_sptr;
+}
 int
 Commxx::get_rank() const
 {
@@ -158,28 +167,31 @@ Commxx::~Commxx()
     if (((ranks.size() > 0) || per_host) && has_this_rank_) {
         int error = MPI_Comm_free(&comm);
         if (error != MPI_SUCCESS) {
-//            throw std::runtime_error("MPI error in Commxx(MPI_Comm_free)");
+            //            throw std::runtime_error("MPI error in
+            //            Commxx(MPI_Comm_free)");
         }
     }
 }
 
 Commxx_sptr
-make_optimal_spc_comm(Commxx_sptr comm_sptr, int optimal_number, bool equally_spread)
-{   
-    int optimal_size=std::min(optimal_number, comm_sptr->get_size());
-    std::vector<int > on_ranks(optimal_size);
+make_optimal_spc_comm(Commxx_sptr comm_sptr, int optimal_number,
+                      bool equally_spread)
+{
+    int optimal_size = std::min(optimal_number, comm_sptr->get_size());
+    std::vector<int> on_ranks(optimal_size);
     int start_rank;
-     if (equally_spread){
-        if ((comm_sptr->get_size() %  optimal_size) !=0)  
-	  throw std::runtime_error("make_optimal_spc_comm, for equal_spread  the subsize is not a divider of comm size");
-	start_rank=comm_sptr->get_rank()/optimal_size;
-     }
-     else{
-       start_rank=0;
-     }      
-    for (int i=0; i<optimal_size;++i){
-	    on_ranks[i]=i+start_rank*optimal_size;
-    }	
-    Commxx_sptr ret_comm_sptr(new Commxx(comm_sptr,on_ranks)); 
-    return ret_comm_sptr; 
-} 
+    if (equally_spread) {
+        if ((comm_sptr->get_size() % optimal_size) != 0)
+            throw std::runtime_error("make_optimal_spc_comm, for equal_spread  "
+                                     "the subsize is not a divider of comm "
+                                     "size");
+        start_rank = comm_sptr->get_rank() / optimal_size;
+    } else {
+        start_rank = 0;
+    }
+    for (int i = 0; i < optimal_size; ++i) {
+        on_ranks[i] = i + start_rank * optimal_size;
+    }
+    Commxx_sptr ret_comm_sptr(new Commxx(comm_sptr, on_ranks));
+    return ret_comm_sptr;
+}

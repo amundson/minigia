@@ -3,14 +3,14 @@
 
 #include <iostream>
 
-#include <boost/random/normal_distribution.hpp>
 #include <boost/random/mersenne_twister.hpp>
+#include <boost/random/normal_distribution.hpp>
 #include <boost/random/variate_generator.hpp>
 const int seed = 18284590;
 
+#include "commxx.h"
 #include "multi_array_typedefs.h"
 #include "reference_particle.h"
-#include "commxx.h"
 #include "restrict_extension.h"
 
 //  J. Beringer et al. (Particle Data Group), PR D86, 010001 (2012) and 2013
@@ -68,9 +68,8 @@ private:
 
     void fill_gaussian(int mpi_size, int mpi_rank)
     {
-        boost::variate_generator<boost::mt19937, boost::normal_distribution<> >
-          generator(boost::mt19937(1),
-                    boost::normal_distribution<>());
+        boost::variate_generator<boost::mt19937, boost::normal_distribution<>>
+            generator(boost::mt19937(1), boost::normal_distribution<>());
         generator.engine().seed(seed);
         double stdx, stdy, stdz;
         stdx = stdy = stdz = 1.0e-3;
@@ -91,10 +90,10 @@ private:
 public:
     Bunch(int total_num, double real_num, int mpi_size, int mpi_rank)
         : reference_particle(proton_charge, proton_mass,
-                             example_gamma * proton_mass),
-          total_num(total_num),
-          real_num(real_num),
-          comm_sptr(new Commxx)
+                             example_gamma * proton_mass)
+        , total_num(total_num)
+        , real_num(real_num)
+        , comm_sptr(new Commxx)
     {
         local_num = total_num / mpi_size;
         storage =
