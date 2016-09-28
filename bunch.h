@@ -68,7 +68,7 @@ private:
 
     void fill_gaussian(int mpi_size, int mpi_rank)
     {
-        boost::variate_generator<boost::mt19937, boost::normal_distribution<>>
+        boost::variate_generator<boost::mt19937, boost::normal_distribution<> >
             generator(boost::mt19937(1), boost::normal_distribution<>());
         generator.engine().seed(seed);
         double stdx, stdy, stdz;
