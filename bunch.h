@@ -2,6 +2,12 @@
 #define BUNCH_H_
 
 #include <iostream>
+
+#include <boost/random/normal_distribution.hpp>
+#include <boost/random/mersenne_twister.hpp>
+#include <boost/random/variate_generator.hpp>
+const int seed = 18284590;
+
 #include "multi_array_typedefs.h"
 #include "reference_particle.h"
 #include "commxx.h"
@@ -46,6 +52,42 @@ private:
     Commxx_sptr comm_sptr;
     AView aview;
 
+    void fill_stupid(int mpi_size, int mpi_rank)
+    {
+        for (int part = 0; part < local_num; ++part) {
+            int index = part + mpi_rank * mpi_size;
+            (*local_particles)[part][Bunch::x] = 1.0e-6 * index;
+            (*local_particles)[part][Bunch::xp] = 1.1e-8 * index;
+            (*local_particles)[part][Bunch::y] = 1.3e-6 * index;
+            (*local_particles)[part][Bunch::yp] = 1.4e-8 * index;
+            (*local_particles)[part][Bunch::z] = 1.5e-4 * index;
+            (*local_particles)[part][Bunch::zp] = 1.5e-7 * index;
+            (*local_particles)[part][Bunch::id] = index;
+        }
+    }
+
+    void fill_gaussian(int mpi_size, int mpi_rank)
+    {
+        boost::variate_generator<boost::mt19937, boost::normal_distribution<> >
+          generator(boost::mt19937(1),
+                    boost::normal_distribution<>());
+        generator.engine().seed(seed);
+        double stdx, stdy, stdz;
+        stdx = stdy = stdz = 1.0e-3;
+        double stdxp, stdyp, stdzp;
+        stdxp = stdyp = stdzp = 0.1 * stdx;
+        for (int part = 0; part < local_num; ++part) {
+            int index = part + mpi_rank * mpi_size;
+            (*local_particles)[part][Bunch::x] = stdx * generator();
+            (*local_particles)[part][Bunch::xp] = stdxp * generator();
+            (*local_particles)[part][Bunch::y] = stdy * generator();
+            (*local_particles)[part][Bunch::yp] = stdyp * generator();
+            (*local_particles)[part][Bunch::z] = stdz * generator();
+            (*local_particles)[part][Bunch::zp] = stdzp * generator();
+            (*local_particles)[part][Bunch::id] = index;
+        }
+    }
+
 public:
     Bunch(int total_num, double real_num, int mpi_size, int mpi_rank)
         : reference_particle(proton_charge, proton_mass,
@@ -71,16 +113,7 @@ public:
         aview.yp = origin + local_num * Bunch::yp;
         aview.cdt = origin + local_num * Bunch::cdt;
         aview.dpop = origin + local_num * Bunch::dpop;
-        for (int part = 0; part < local_num; ++part) {
-            int index = part + mpi_rank * mpi_size;
-            (*local_particles)[part][Bunch::x] = 1.0e-6 * index;
-            (*local_particles)[part][Bunch::xp] = 1.1e-8 * index;
-            (*local_particles)[part][Bunch::y] = 1.3e-6 * index;
-            (*local_particles)[part][Bunch::yp] = 1.4e-8 * index;
-            (*local_particles)[part][Bunch::z] = 1.5e-4 * index;
-            (*local_particles)[part][Bunch::zp] = 1.5e-7 * index;
-            (*local_particles)[part][Bunch::id] = index;
-        }
+        fill_gaussian(mpi_size, mpi_rank);
     }
 
     Reference_particle const& get_reference_particle() const
