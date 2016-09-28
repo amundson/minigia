@@ -93,13 +93,11 @@ Space_charge_3d_open_hockney::constructor_common(
 }
 
 Space_charge_3d_open_hockney::Space_charge_3d_open_hockney(
-        Commxx_divider_sptr commxx_divider_sptr,
-        std::vector<int > const & grid_shape,
-        double n_sigma) :
+        std::vector<int > const & grid_shape, double n_sigma) :
                 grid_shape(3),
                 doubled_grid_shape(3),
                 padded_grid_shape(3),
-                commxx_divider_sptr(commxx_divider_sptr),
+                commxx_divider_sptr(new Commxx_divider),
                 comm2_sptr(),
                 comm1_sptr(),
                 n_sigma(n_sigma),
@@ -108,7 +106,6 @@ Space_charge_3d_open_hockney::Space_charge_3d_open_hockney(
 {
     constructor_common(grid_shape);
 }
-
 double
 Space_charge_3d_open_hockney::get_n_sigma() const
 {

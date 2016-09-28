@@ -32,9 +32,8 @@ private:
     void
     set_doubled_domain();
 public:
-    Space_charge_3d_open_hockney(Commxx_divider_sptr commxx_divider_sptr,
-            std::vector<int > const & grid_shape,
-            double n_sigma = 8.0);
+    Space_charge_3d_open_hockney(std::vector<int > const & grid_shape,
+                                 double n_sigma = 8.0);
     /// Note: Use Space_charge_3d_open_hockney::get_internal_grid_shape for
     /// Distributed_fft3d.
     void
