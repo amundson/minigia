@@ -3,6 +3,8 @@
 
 #include <vector>
 
+#include "array_typedefs.h"
+
 #include "bunch.h"
 #include "rectangular_grid_domain.h"
 
@@ -19,6 +21,8 @@ public:
                              double n_sigma = 8.0);
     void update_domain(Bunch const& bunch);
     Rectangular_grid_domain const& get_domain() { return domain; }
+    Array3d get_local_rho(Bunch const& bunch);
+
     void apply(Bunch& bunch, double time_step, int verbosity);
     virtual ~Space_charge_3d_open_new();
 };

@@ -1,5 +1,6 @@
 #include "space_charge_3d_open_new.h"
 #include "core_diagnostics.h"
+#include "deposit_new.h"
 
 Space_charge_3d_open_new::Space_charge_3d_open_new(
         std::vector<int> const& grid_shape, double n_sigma):
@@ -56,6 +57,14 @@ Space_charge_3d_open_new::update_domain(Bunch const& bunch)
         domain.set_physical_offset(offset);
         domain.set_physical_size(size);
     }
+}
+
+Array3d
+Space_charge_3d_open_new::get_local_rho(Bunch const& bunch)
+{
+    Array3d rho(grid_shape[0], grid_shape[1], grid_shape[2]);
+    deposit_charge_3d_new(rho, bunch, true);
+    return rho;
 }
 
 Space_charge_3d_open_new::~Space_charge_3d_open_new()

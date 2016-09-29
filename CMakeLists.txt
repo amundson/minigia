@@ -39,6 +39,8 @@ add_executable(space_charge_3d
     space_charge_3d_open_hockney.h
     space_charge_3d_open_new.cc
     space_charge_3d_open_new.h
+    Array.h
+    array_typedefs.h
     commxx.cc
     commxx.h
     commxx_divider.cc
@@ -47,6 +49,8 @@ add_executable(space_charge_3d
     core_diagnostics.h
     deposit.cc
     deposit.h
+    deposit_new.cc
+    deposit_new.h
     distributed_fft3d.cc
     distributed_fft3d.h
     distributed_rectangular_grid.cc
