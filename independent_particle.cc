@@ -2,7 +2,7 @@
 #include <stdexcept>
 #include <vector>
 
-#include <mpi.h>
+#include "fakempi.h"
 
 #include "bunch.h"
 #include "gsvector.h"

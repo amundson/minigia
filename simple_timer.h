@@ -1,4 +1,4 @@
-#include "mpi.h"
+#include "fakempi.h"
 #include <iostream>
 #include <iomanip>
 #ifdef USE_SIMPLE_TIMER_MEM

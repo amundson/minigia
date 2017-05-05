@@ -2,8 +2,10 @@ project(MINIGIA)
 cmake_minimum_required(VERSION 2.8)
 set(CMAKE_MODULE_PATH "${MINIGIA_SOURCE_DIR}/CMake")
 
+if(FALSE)
 find_package(MPI REQUIRED)
 include_directories(${MPI_CXX_INCLUDE_PATH})
+endif()
 
 if(DEFINES)
     add_definitions(${DEFINES})

@@ -1,7 +1,7 @@
 #ifndef PARALLEL_UTILS_H_
 #define PARALLEL_UTILS_H_
 
-#include "mpi.h"
+#include "fakempi.h"
 #include <vector>
 #include "commxx.h"
 #include <iostream>

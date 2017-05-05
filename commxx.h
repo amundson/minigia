@@ -4,7 +4,7 @@
 #include <vector>
 #include <stdexcept>
 #include <boost/shared_ptr.hpp>
-#include "mpi.h"
+#include "fakempi.h"
 
 class Commxx;
 typedef boost::shared_ptr<Commxx > Commxx_sptr; // syndoc:include
