@@ -1,6 +1,6 @@
 #ifndef FAKEMPI_H
 #define FAKEMPI_H
-#include <ctime>
+#include <sys/time.h>
 
 typedef int MPI_Comm;
 typedef int MPI_Group;
@@ -8,7 +8,9 @@ typedef int MPI_Group;
 inline double
 MPI_Wtime()
 {
-    return clock()/(1.0*CLOCKS_PER_SEC);
+    timeval tv;
+    gettimeofday(&tv, NULL);
+    return tv.tv_sec + 1.0e-6 * tv.tv_usec;
 }
 
 const int MPI_COMM_WORLD = 0;
