@@ -14,9 +14,11 @@ set(Boost_NO_BOOST_CMAKE ON)
 find_package(Boost REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
 
+if(FALSE)
 find_package(FFTW3 REQUIRED)
 include_directories(${FFTW3_INCLUDE_DIR})
 set(PARALLEL_FFTW_LIBRARIES ${FFTW3_MPI_LIBRARIES} ${FFTW3_OMP_LIBRARIES} ${FFTW3_LIBRARIES})
+endif()
 
 include_directories(${CMAKE_SOURCE_DIR})
 include_directories(${CMAKE_SOURCE_DIR}/vectorclass)
@@ -33,6 +35,7 @@ add_executable(independent_particle
     restrict_extension.h)
 target_link_libraries(independent_particle ${MPI_LIBRARIES})
 
+if(FALSE)
 add_executable(space_charge_3d
     space_charge_3d.cc
     space_charge_3d_open_hockney.cc
@@ -69,3 +72,4 @@ add_executable(space_charge_3d
 target_link_libraries(space_charge_3d ${MPI_LIBRARIES}
     ${PARALLEL_FFTW_LIBRARIES})
 
+endif()
