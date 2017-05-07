@@ -36,6 +36,7 @@ add_executable(independent_particle
     reference_particle.h
     restrict_extension.h)
 target_link_libraries(independent_particle ${MPI_LIBRARIES})
+#target_link_libraries(independent_particle -liomp5) 
 
 if(FALSE)
 add_executable(space_charge_3d
