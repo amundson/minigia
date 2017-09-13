@@ -5,6 +5,9 @@ set(CMAKE_MODULE_PATH "${MINIGIA_SOURCE_DIR}/CMake")
 find_package(MPI REQUIRED)
 include_directories(${MPI_CXX_INCLUDE_PATH})
 
+find_package(Eigen3 REQUIRED)
+include_directories(${EIGEN3_INCLUDE_DIR})
+
 if(DEFINES)
     add_definitions(${DEFINES})
 endif()
