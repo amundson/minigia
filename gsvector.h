@@ -4,6 +4,7 @@
 #include "boost/multi_array.hpp"
 typedef boost::multi_array_ref<double, 2> MArray2d_ref;
 
+#define GSV_SSE 1
 #if 0
 #undef GSV_SSE
 #undef GSV_AVX
