@@ -142,9 +142,9 @@ inline bool
 multi_array_check_equal(MArray2d_ref const& a, MArray2d_ref const& b,
                         double tolerance)
 {
-    for (unsigned int i = a.index_bases()[0];
+    for (auto i = a.index_bases()[0];
          i < a.index_bases()[0] + a.shape()[0]; ++i) {
-        for (unsigned int j = a.index_bases()[1];
+        for (auto j = a.index_bases()[1];
              j < a.index_bases()[1] + a.shape()[1]; ++j) {
             if (!floating_point_equal(a[i][j], b[i][j], tolerance)) {
                 std::cerr << "multi_array_check_equal:\n";
