@@ -2,6 +2,7 @@
 #define BUNCH_H_
 
 #include <iostream>
+#include <Eigen/Dense>
 #include "multi_array_typedefs.h"
 #include "reference_particle.h"
 #include "commxx.h"
@@ -27,6 +28,8 @@ public:
     static const int id = 6;
     static const int particle_size = 7;
 
+    typedef Eigen::Matrix<double, particle_size, Eigen::Dynamic> Particle_matrix;
+
     struct AView
     {
         double* RESTRICT x;
@@ -40,9 +43,9 @@ public:
 private:
     Reference_particle reference_particle;
     double* storage;
-    MArray2d_ref* local_particles;
     int local_num, total_num;
     double real_num;
+    Particle_matrix local_particles;
     Commxx_sptr comm_sptr;
     AView aview;
 
@@ -50,21 +53,13 @@ public:
     Bunch(int total_num, double real_num, int mpi_size, int mpi_rank)
         : reference_particle(proton_charge, proton_mass,
                              example_gamma * proton_mass),
+          local_num(total_num / mpi_size), // jfa FIXME!
           total_num(total_num),
           real_num(real_num),
+          local_particles(particle_size, local_num),
           comm_sptr(new Commxx)
     {
-        local_num = total_num / mpi_size;
-        storage =
-#ifdef MM_MALLOC
-            (double*)_mm_malloc(local_num * particle_size * sizeof(double), 64);
-#else
-            (double*)malloc(local_num * particle_size * sizeof(double));
-#endif
-        local_particles = new MArray2d_ref(
-            storage, boost::extents[local_num][Bunch::particle_size],
-            boost::fortran_storage_order());
-        double* origin = local_particles->origin();
+        double* origin = local_particles.data();
         aview.x = origin + local_num * Bunch::x;
         aview.xp = origin + local_num * Bunch::xp;
         aview.y = origin + local_num * Bunch::y;
@@ -73,13 +68,13 @@ public:
         aview.dpop = origin + local_num * Bunch::dpop;
         for (int part = 0; part < local_num; ++part) {
             int index = part + mpi_rank * mpi_size;
-            (*local_particles)[part][Bunch::x] = 1.0e-6 * index;
-            (*local_particles)[part][Bunch::xp] = 1.1e-8 * index;
-            (*local_particles)[part][Bunch::y] = 1.3e-6 * index;
-            (*local_particles)[part][Bunch::yp] = 1.4e-8 * index;
-            (*local_particles)[part][Bunch::z] = 1.5e-4 * index;
-            (*local_particles)[part][Bunch::zp] = 1.5e-7 * index;
-            (*local_particles)[part][Bunch::id] = index;
+            local_particles(Bunch::x, part) = 1.0e-6 * index;
+            local_particles(Bunch::xp, part) = 1.1e-8 * index;
+            local_particles(Bunch::y, part) = 1.3e-6 * index;
+            local_particles(Bunch::yp, part) = 1.4e-8 * index;
+            local_particles(Bunch::z, part) = 1.5e-4 * index;
+            local_particles(Bunch::zp, part) = 1.5e-7 * index;
+            local_particles(Bunch::id, part) = index;
         }
     }
 
@@ -88,9 +83,9 @@ public:
         return reference_particle;
     }
 
-    MArray2d_ref get_local_particles() { return *local_particles; }
+    Particle_matrix & get_local_particles() { return local_particles; }
 
-    Const_MArray2d_ref get_local_particles() const { return *local_particles; }
+    Particle_matrix const& get_local_particles() const { return local_particles; }
 
     double get_mass() const { return reference_particle.get_mass(); }
 
@@ -106,7 +101,7 @@ public:
                     double* RESTRICT& ya, double* RESTRICT& ypa,
                     double* RESTRICT& cdta, double* RESTRICT& dpopa)
     {
-        double* origin = local_particles->origin();
+        double* origin = local_particles.data();
         xa = origin + local_num * Bunch::x;
         xpa = origin + local_num * Bunch::xp;
         ya = origin + local_num * Bunch::y;
@@ -119,12 +114,6 @@ public:
 
     virtual ~Bunch()
     {
-        delete local_particles;
-#ifdef MM_MALLOC
-        _mm_free(storage);
-#else
-        free(storage);
-#endif
     }
 };
 
