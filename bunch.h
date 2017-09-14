@@ -28,7 +28,7 @@ public:
     static const int id = 6;
     static const int particle_size = 7;
 
-    typedef Eigen::Matrix<double, 7, Eigen::Dynamic> Particle_matrix;
+    typedef Eigen::Matrix<double, Eigen::Dynamic, 7> Particles;
 
     struct AView
     {
@@ -45,7 +45,7 @@ private:
     double* storage;
     int local_num, total_num;
     double real_num;
-    Particle_matrix local_particles;
+    Particles local_particles;
     Commxx_sptr comm_sptr;
     AView aview;
 
@@ -56,35 +56,27 @@ public:
           local_num(total_num / mpi_size), // jfa FIXME!
           total_num(total_num),
           real_num(real_num),
-          local_particles(7, local_num),
+          local_particles(local_num, 7),
           comm_sptr(new Commxx)
     {
         double* origin = local_particles.data();
-        aview.x = local_particles.row(Bunch::x).data();
-        aview.xp = local_particles.row(Bunch::xp).data();
-        aview.y = local_particles.row(Bunch::y).data();
-        aview.yp = local_particles.row(Bunch::yp).data();
-        aview.cdt = local_particles.row(Bunch::cdt).data();
-        aview.dpop = local_particles.row(Bunch::dpop).data();
+        aview.x = local_particles.col(Bunch::x).data();
+        aview.xp = local_particles.col(Bunch::xp).data();
+        aview.y = local_particles.col(Bunch::y).data();
+        aview.yp = local_particles.col(Bunch::yp).data();
+        aview.cdt = local_particles.col(Bunch::cdt).data();
+        aview.dpop = local_particles.col(Bunch::dpop).data();
         for (int part = 0; part < local_num; ++part) {
             int index = part + mpi_rank * mpi_size;
-            local_particles(Bunch::x, part) = 1.0e-6 * index;
-            local_particles(Bunch::xp, part) = 1.1e-8 * index;
-            local_particles(Bunch::y, part) = 1.3e-6 * index;
-            local_particles(Bunch::yp, part) = 1.4e-8 * index;
-            local_particles(Bunch::z, part) = 1.5e-4 * index;
-            local_particles(Bunch::zp, part) = 1.5e-7 * index;
-            local_particles(Bunch::id, part) = index;
+            local_particles(part, Bunch::x) = 1.0e-6 * index;
+            local_particles(part, Bunch::xp) = 1.1e-8 * index;
+            local_particles(part, Bunch::y) = 1.3e-6 * index;
+            local_particles(part, Bunch::yp) = 1.4e-8 * index;
+            local_particles(part, Bunch::z) = 1.5e-4 * index;
+            local_particles(part, Bunch::zp) = 1.5e-7 * index;
+            local_particles(part, Bunch::id) = index;
 
-            for (int ix = 0; ix < 7; ++ix) {
-                local_particles(ix,part) = 10*ix + part;
-            }
         }
-        std::cout << "wtf1: " << local_particles(2,3) << std::endl;
-        std::cout << "wtf2: " << local_particles.row(2)(3) << std::endl;
-//        double *wtf = &(local_particles(2,0));
-//        std::cout << "wtf3: " << wtf[3] << std::endl;
-        std::cout << "wtf3: " << local_particles.col(3).data()[2] << std::endl;
     }
 
     Reference_particle const& get_reference_particle() const
@@ -92,9 +84,9 @@ public:
         return reference_particle;
     }
 
-    Particle_matrix & get_local_particles() { return local_particles; }
+    Particles & get_local_particles() { return local_particles; }
 
-    Particle_matrix const& get_local_particles() const { return local_particles; }
+    Particles const& get_local_particles() const { return local_particles; }
 
     double get_mass() const { return reference_particle.get_mass(); }
 
@@ -111,12 +103,12 @@ public:
                     double* RESTRICT& cdta, double* RESTRICT& dpopa)
     {
         double* origin = local_particles.data();
-        xa = local_particles.row(Bunch::x).data();
-        xpa = local_particles.row(Bunch::xp).data();
-        ya = local_particles.row(Bunch::y).data();
-        ypa = local_particles.row(Bunch::yp).data();
-        cdta = local_particles.row(Bunch::cdt).data();
-        dpopa = local_particles.row(Bunch::dpop).data();
+        xa = local_particles.col(Bunch::x).data();
+        xpa = local_particles.col(Bunch::xp).data();
+        ya = local_particles.col(Bunch::y).data();
+        ypa = local_particles.col(Bunch::yp).data();
+        cdta = local_particles.col(Bunch::cdt).data();
+        dpopa = local_particles.col(Bunch::dpop).data();
     }
 
     AView get_aview() { return aview; }
@@ -137,7 +129,7 @@ floating_point_equal(double a, double b, double tolerance)
 }
 
 inline bool
-eigen_check_equal(Bunch::Particle_matrix const& a, Bunch::Particle_matrix const& b,
+eigen_check_equal(Bunch::Particles const& a, Bunch::Particles const& b,
                         double tolerance)
 {
 //    return a.isApprox(b, tolerance);
@@ -147,7 +139,7 @@ eigen_check_equal(Bunch::Particle_matrix const& a, Bunch::Particle_matrix const&
                 std::cerr << "eigen_check_equal:\n";
                 std::cerr << "  a(" << i << "," << j << ") = " << a(i, j)
                           << std::endl;
-                std::cerr << "  b(" << i << "][" << j << ") = " << b(i, j)
+                std::cerr << "  b(" << i << "," << j << ") = " << b(i, j)
                           << std::endl;
                 std::cerr << "  a-b = " << a(i, j) - b(i, j)
                           << ", tolerance = " << tolerance << std::endl;

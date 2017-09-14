@@ -52,16 +52,16 @@ propagate_orig(Bunch& bunch, drift& thedrift)
         throw std::runtime_error(
             "local number of particles must be a multiple of 4");
     }
-    Bunch::Particle_matrix & particles = bunch.get_local_particles();
+    Bunch::Particles & particles = bunch.get_local_particles();
     double length = thedrift.Length();
     double reference_momentum = bunch.get_reference_particle().get_momentum();
     double m = bunch.get_mass();
     double reference_time = thedrift.getReferenceTime();
 
     for (int part = 0; part < local_num; ++part) {
-        double dpop(particles(Bunch::dpop, part));
-        double xp(particles(Bunch::xp, part));
-        double yp(particles(Bunch::yp, part));
+        double dpop(particles(part, Bunch::dpop));
+        double xp(particles(part, Bunch::xp));
+        double yp(particles(part, Bunch::yp));
         double inv_npz =
             1.0 / sqrt((dpop + 1.0) * (dpop + 1.0) - xp * xp - yp * yp);
         double lxpr = xp * length * inv_npz;
@@ -70,15 +70,15 @@ propagate_orig(Bunch& bunch, drift& thedrift)
         double p = reference_momentum + dpop * reference_momentum;
         double E = sqrt(p * p + m * m);
         double beta = p / E;
-        double x(particles(Bunch::x, part));
-        double y(particles(Bunch::y, part));
-        double cdt(particles(Bunch::cdt, part));
+        double x(particles(part, Bunch::x));
+        double y(particles(part, Bunch::y));
+        double cdt(particles(part, Bunch::cdt));
         x += lxpr;
         y += lypr;
         cdt += D / beta - reference_time;
-        particles(Bunch::x, part) = x;
-        particles(Bunch::y, part) = y;
-        particles(Bunch::cdt, part) = cdt;
+        particles(part, Bunch::x) = x;
+        particles(part, Bunch::y) = y;
+        particles(part, Bunch::cdt) = cdt;
     }
 }
 
@@ -154,7 +154,7 @@ do_timing(void (*propagator)(Bunch&, drift&), const char* name, Bunch& bunch,
     const int num_runs = 100;
     double best_time = 1e10;
     std::vector<double> times(num_runs);
-    for (int i = 0; i < num_runs; ++i) {
+    for (size_t i = 0; i < num_runs; ++i) {
         double t0 = MPI_Wtime();
         (*propagator)(bunch, thedrift);
         double t1 = MPI_Wtime();
@@ -205,34 +205,6 @@ run()
     }
 
     Bunch bunch(size * particles_per_rank, real_particles, size, rank);
-
-    for(int i =0; i<7; ++i) {
-        std::cout << "bunch(" << i << ", 0) = " << bunch.get_local_particles()(i,0) << std::endl;
-    }
-
-    for(int i =0; i<7; ++i) {
-        std::cout << "bunch(" << i << ", 1) = " << bunch.get_local_particles()(i,1) << std::endl;
-    }
-
-    std::cout << "bunch.aview.x[0]  = " << bunch.get_aview().x[0] << std::endl;
-    std::cout << "bunch.aview.xp[0]  = " << bunch.get_aview().xp[0] << std::endl;
-    std::cout << "bunch.aview.y[0]  = " << bunch.get_aview().y[0] << std::endl;
-    std::cout << "bunch.aview.yp[0]  = " << bunch.get_aview().yp[0] << std::endl;
-    std::cout << "bunch.aview.cdt[0]  = " << bunch.get_aview().cdt[0] << std::endl;
-    std::cout << "bunch.aview.dpop[0]  = " << bunch.get_aview().dpop[0] << std::endl;
-    std::cout << "bunch.aview.x[1]  = " << bunch.get_aview().x[1] << std::endl;
-    std::cout << "bunch.aview.xp[1]  = " << bunch.get_aview().xp[1] << std::endl;
-    std::cout << "bunch.aview.y[1]  = " << bunch.get_aview().y[1] << std::endl;
-    std::cout << "bunch.aview.yp[1]  = " << bunch.get_aview().yp[1] << std::endl;
-    std::cout << "bunch.aview.cdt[1]  = " << bunch.get_aview().cdt[1] << std::endl;
-    std::cout << "bunch.aview.dpop[1]  = " << bunch.get_aview().dpop[1] << std::endl;
-    std::cout << "bunch.aview.x[2]  = " << bunch.get_aview().x[2] << std::endl;
-    std::cout << "bunch.aview.xp[2]  = " << bunch.get_aview().xp[2] << std::endl;
-    std::cout << "bunch.aview.y[2]  = " << bunch.get_aview().y[2] << std::endl;
-    std::cout << "bunch.aview.yp[2]  = " << bunch.get_aview().yp[2] << std::endl;
-    std::cout << "bunch.aview.cdt[2]  = " << bunch.get_aview().cdt[2] << std::endl;
-    std::cout << "bunch.aview.dpop[2]  = " << bunch.get_aview().dpop[2] << std::endl;
-
     drift thedrift;
 
     double reference_timing =
