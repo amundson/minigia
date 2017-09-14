@@ -28,7 +28,7 @@ public:
     static const int id = 6;
     static const int particle_size = 7;
 
-    typedef Eigen::Matrix<double, particle_size, Eigen::Dynamic> Particle_matrix;
+    typedef Eigen::Matrix<double, 7, Eigen::Dynamic> Particle_matrix;
 
     struct AView
     {
@@ -56,16 +56,16 @@ public:
           local_num(total_num / mpi_size), // jfa FIXME!
           total_num(total_num),
           real_num(real_num),
-          local_particles(particle_size, local_num),
+          local_particles(7, local_num),
           comm_sptr(new Commxx)
     {
         double* origin = local_particles.data();
-        aview.x = origin + local_num * Bunch::x;
-        aview.xp = origin + local_num * Bunch::xp;
-        aview.y = origin + local_num * Bunch::y;
-        aview.yp = origin + local_num * Bunch::yp;
-        aview.cdt = origin + local_num * Bunch::cdt;
-        aview.dpop = origin + local_num * Bunch::dpop;
+        aview.x = local_particles.row(Bunch::x).data();
+        aview.xp = local_particles.row(Bunch::xp).data();
+        aview.y = local_particles.row(Bunch::y).data();
+        aview.yp = local_particles.row(Bunch::yp).data();
+        aview.cdt = local_particles.row(Bunch::cdt).data();
+        aview.dpop = local_particles.row(Bunch::dpop).data();
         for (int part = 0; part < local_num; ++part) {
             int index = part + mpi_rank * mpi_size;
             local_particles(Bunch::x, part) = 1.0e-6 * index;
@@ -75,7 +75,16 @@ public:
             local_particles(Bunch::z, part) = 1.5e-4 * index;
             local_particles(Bunch::zp, part) = 1.5e-7 * index;
             local_particles(Bunch::id, part) = index;
+
+            for (int ix = 0; ix < 7; ++ix) {
+                local_particles(ix,part) = 10*ix + part;
+            }
         }
+        std::cout << "wtf1: " << local_particles(2,3) << std::endl;
+        std::cout << "wtf2: " << local_particles.row(2)(3) << std::endl;
+//        double *wtf = &(local_particles(2,0));
+//        std::cout << "wtf3: " << wtf[3] << std::endl;
+        std::cout << "wtf3: " << local_particles.col(3).data()[2] << std::endl;
     }
 
     Reference_particle const& get_reference_particle() const
@@ -102,12 +111,12 @@ public:
                     double* RESTRICT& cdta, double* RESTRICT& dpopa)
     {
         double* origin = local_particles.data();
-        xa = origin + local_num * Bunch::x;
-        xpa = origin + local_num * Bunch::xp;
-        ya = origin + local_num * Bunch::y;
-        ypa = origin + local_num * Bunch::yp;
-        cdta = origin + local_num * Bunch::cdt;
-        dpopa = origin + local_num * Bunch::dpop;
+        xa = local_particles.row(Bunch::x).data();
+        xpa = local_particles.row(Bunch::xp).data();
+        ya = local_particles.row(Bunch::y).data();
+        ypa = local_particles.row(Bunch::yp).data();
+        cdta = local_particles.row(Bunch::cdt).data();
+        dpopa = local_particles.row(Bunch::dpop).data();
     }
 
     AView get_aview() { return aview; }
@@ -128,20 +137,19 @@ floating_point_equal(double a, double b, double tolerance)
 }
 
 inline bool
-multi_array_check_equal(MArray2d_ref const& a, MArray2d_ref const& b,
+eigen_check_equal(Bunch::Particle_matrix const& a, Bunch::Particle_matrix const& b,
                         double tolerance)
 {
-    for (auto i = a.index_bases()[0];
-         i < a.index_bases()[0] + a.shape()[0]; ++i) {
-        for (auto j = a.index_bases()[1];
-             j < a.index_bases()[1] + a.shape()[1]; ++j) {
-            if (!floating_point_equal(a[i][j], b[i][j], tolerance)) {
-                std::cerr << "multi_array_check_equal:\n";
-                std::cerr << "  a[" << i << "][" << j << "] = " << a[i][j]
+//    return a.isApprox(b, tolerance);
+    for (Eigen::Index i = 0; i < a.rows(); ++i) {
+        for (Eigen::Index j = 0; j < a.cols(); j++) {
+            if (!floating_point_equal(a(i, j), b(i,j), tolerance)) {
+                std::cerr << "eigen_check_equal:\n";
+                std::cerr << "  a(" << i << "," << j << ") = " << a(i, j)
                           << std::endl;
-                std::cerr << "  b[" << i << "][" << j << "] = " << b[i][j]
+                std::cerr << "  b(" << i << "][" << j << ") = " << b(i, j)
                           << std::endl;
-                std::cerr << "  a-b = " << a[i][j] - b[i][j]
+                std::cerr << "  a-b = " << a(i, j) - b(i, j)
                           << ", tolerance = " << tolerance << std::endl;
                 return false;
             }
@@ -160,8 +168,8 @@ check_equal(Bunch& b1, Bunch& b2, double tolerance)
                   << std::endl;
         return false;
     }
-    return multi_array_check_equal(b1.get_local_particles(),
-                                   b2.get_local_particles(), tolerance);
+    return eigen_check_equal(b1.get_local_particles(),
+                             b2.get_local_particles(), tolerance);
 }
 
 #endif /* BUNCH_H_ */
