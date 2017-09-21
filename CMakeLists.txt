@@ -1,6 +1,6 @@
 project(MINIGIA)
 cmake_minimum_required(VERSION 3.0)
-set(CMAKE_MODULE_PATH "${MINIGIA_SOURCE_DIR}/CMake")
+list(APPEND CMAKE_MODULE_PATH "${MINIGIA_SOURCE_DIR}/CMake")
 
 set (CMAKE_CXX_STANDARD 11)
 
@@ -35,6 +35,6 @@ add_executable(independent_particle
     )
 
 target_include_directories(independent_particle PRIVATE vectorclass)
-target_link_libraries(independent_particle PRIVATE MPI::MPI_C)
+target_link_libraries(independent_particle PRIVATE MPI::MPI_CXX)
 target_link_libraries(independent_particle PRIVATE Eigen3::Eigen)
 
