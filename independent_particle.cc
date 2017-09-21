@@ -1,3 +1,4 @@
+#include <chrono>
 #include <iostream>
 #include <stdexcept>
 #include <vector>
@@ -155,10 +156,11 @@ do_timing(void (*propagator)(Bunch&, drift&), const char* name, Bunch& bunch,
     double best_time = 1e10;
     std::vector<double> times(num_runs);
     for (size_t i = 0; i < num_runs; ++i) {
-        double t0 = MPI_Wtime();
+        const auto start = std::chrono::high_resolution_clock::now();
         (*propagator)(bunch, thedrift);
-        double t1 = MPI_Wtime();
-        double time = t1 - t0;
+        const auto end = std::chrono::high_resolution_clock::now();
+        const auto time =
+            std::chrono::duration_cast<std::chrono::duration<double>>(end - start).count();
         if (time < best_time) {
             best_time = time;
         }
