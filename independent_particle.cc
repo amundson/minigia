@@ -1,8 +1,8 @@
 #include <chrono>
 #include <iostream>
+#include <limits>
 #include <stdexcept>
 #include <vector>
-#include <limits>
 
 #include <mpi.h>
 
@@ -161,7 +161,9 @@ do_timing(void (*propagator)(Bunch&, drift&), const char* name, Bunch& bunch,
         (*propagator)(bunch, thedrift);
         const auto end = std::chrono::high_resolution_clock::now();
         const auto time =
-            std::chrono::duration_cast<std::chrono::duration<double>>(end - start).count();
+            std::chrono::duration_cast<std::chrono::duration<double>>(end -
+                                                                      start)
+                .count();
         if (time < best_time) {
             best_time = time;
         }
@@ -222,8 +224,7 @@ run()
                   << std::endl;
     }
     run_check(&propagate_gsv, "vectorized", thedrift, size, rank);
-    do_timing(&propagate_gsv, "vectorized", bunch, thedrift, opt_timing,
-              rank);
+    do_timing(&propagate_gsv, "vectorized", bunch, thedrift, opt_timing, rank);
 }
 
 int
