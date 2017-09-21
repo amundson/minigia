@@ -71,6 +71,8 @@ propagate_orig(Bunch& bunch, drift& thedrift)
         auto x(particles(part, Bunch::x));
         auto y(particles(part, Bunch::y));
         auto cdt(particles(part, Bunch::cdt));
+        x += lxpr;
+        y += lypr;
         cdt += D / beta - reference_time;
         particles(part, Bunch::x) = x;
         particles(part, Bunch::y) = y;
