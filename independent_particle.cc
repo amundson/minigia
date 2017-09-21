@@ -2,6 +2,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <vector>
+#include <limits>
 
 #include <mpi.h>
 
@@ -153,7 +154,7 @@ do_timing(void (*propagator)(Bunch&, drift&), const char* name, Bunch& bunch,
 {
     double t = 0;
     const int num_runs = 100;
-    double best_time = 1e10;
+    auto best_time = std::numeric_limits<double>::max();
     std::vector<double> times(num_runs);
     for (size_t i = 0; i < num_runs; ++i) {
         const auto start = std::chrono::high_resolution_clock::now();
