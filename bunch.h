@@ -131,22 +131,12 @@ inline bool
 eigen_check_equal(Bunch::Particles const& a, Bunch::Particles const& b,
                         double tolerance)
 {
-<<<<<<< HEAD
 //    return a.isApprox(b, tolerance);
     for (Eigen::Index i = 0; i < a.rows(); ++i) {
         for (Eigen::Index j = 0; j < a.cols(); j++) {
             if (!floating_point_equal(a(i, j), b(i,j), tolerance)) {
                 std::cerr << "eigen_check_equal:\n";
                 std::cerr << "  a(" << i << "," << j << ") = " << a(i, j)
-=======
-    for (size_t i = a.index_bases()[0];
-         i < a.index_bases()[0] + a.shape()[0]; ++i) {
-        for (size_t j = a.index_bases()[1];
-             j < a.index_bases()[1] + a.shape()[1]; ++j) {
-            if (!floating_point_equal(a[i][j], b[i][j], tolerance)) {
-                std::cerr << "multi_array_check_equal:\n";
-                std::cerr << "  a[" << i << "][" << j << "] = " << a[i][j]
->>>>>>> auto and size_t, where appropriate
                           << std::endl;
                 std::cerr << "  b(" << i << "," << j << ") = " << b(i, j)
                           << std::endl;

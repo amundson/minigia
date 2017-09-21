@@ -51,7 +51,7 @@ propagate_orig(Bunch& bunch, drift& thedrift)
 {
     auto local_num = bunch.get_local_num();
     Bunch::Particles & particles = bunch.get_local_particles();
-    auto ength = thedrift.Length();
+    auto length = thedrift.Length();
     auto reference_momentum = bunch.get_reference_particle().get_momentum();
     auto m = bunch.get_mass();
     auto reference_time = thedrift.getReferenceTime();
