@@ -22,9 +22,6 @@ if(FALSE)
 find_package(FFTW3 REQUIRED)
 endif()
 
-include_directories(${CMAKE_SOURCE_DIR})
-include_directories(${CMAKE_SOURCE_DIR}/vectorclass)
-
 add_executable(independent_particle
     independent_particle.cc
     bunch.h
@@ -34,6 +31,10 @@ add_executable(independent_particle
     gsvector.h
     multi_array_typedefs.h
     reference_particle.h
-    restrict_extension.h)
+    restrict_extension.h
+    )
+
+target_include_directories(independent_particle PRIVATE vectorclass)
 target_link_libraries(independent_particle PRIVATE MPI::MPI_C)
 target_link_libraries(independent_particle PRIVATE Eigen3::Eigen)
+
