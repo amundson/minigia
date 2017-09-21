@@ -18,7 +18,7 @@ typedef boost::multi_array_ref<double, 2> MArray2d_ref;
 #include "vectorclass.h"
 class GSVector {
    public:
-    static const int size = 2;
+    static const size_t size = 2;
     static const int implementation = 1;
     Vec2d vec;
     GSVector(const MArray2d_ref& marray, size_t index0, size_t index1) : vec() {
@@ -106,7 +106,7 @@ inline std::ostream & operator << (std::ostream & out, GSVector & v)
 #include "vectorclass.h"
 class GSVector {
 public:
-    static const int size = 4;
+    static const size_t size = 4;
     static const int implementation = 2;
     Vec4d vec;
     GSVector(const MArray2d_ref& marray, size_t index0, size_t index1) : vec() {
@@ -194,7 +194,7 @@ inline std::ostream & operator << (std::ostream & out, GSVector & v)
 #include <mass_simd.h>
 class GSVector {
 public:
-    static const int size = 4;
+    static const size_t size = 4;
     static const int implementation = 1;
     vector4double vec;
 //    GSVector(const MArray2d_ref& marray, size_t index0, size_t index1) : vec() {
@@ -271,7 +271,7 @@ static inline GSVector invsqrt(GSVector const& a) { return GSVector(rsqrtd4(a.ve
 #include <mic/micvec.h>
 class GSVector {
 public:
-    static const int size = 8;
+    static const size_t size = 8;
     static const int implementation = 4;
     F64vec8 vec;
     GSVector(MArray2d_ref& marray, size_t index0, size_t index1) : vec(&marray[index0][index1]) { }
@@ -358,7 +358,7 @@ inline std::ostream & operator << (std::ostream & out, GSVector & v)
 
 class GSVector {
    public:
-    static const int size = 1;
+    static const size_t size = 1;
     static const int implementation = 0;
 
     double vec;

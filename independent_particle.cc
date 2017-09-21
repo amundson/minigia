@@ -9,7 +9,7 @@
 #include "bunch.h"
 #include "gsvector.h"
 
-const int particles_per_rank = 100000;
+const size_t particles_per_rank = 100000;
 const double real_particles = 1.0e12;
 
 const double dummy_length = 2.1;
@@ -49,34 +49,28 @@ drift_unit(T& x, T& y, T& cdt, T& xp, T& yp, T& dpop, double length,
 void
 propagate_orig(Bunch& bunch, drift& thedrift)
 {
-    int local_num = bunch.get_local_num();
-    if (local_num % 1 != 0) {
-        throw std::runtime_error(
-            "local number of particles must be a multiple of 4");
-    }
+    auto local_num = bunch.get_local_num();
     Bunch::Particles & particles = bunch.get_local_particles();
-    double length = thedrift.Length();
-    double reference_momentum = bunch.get_reference_particle().get_momentum();
-    double m = bunch.get_mass();
-    double reference_time = thedrift.getReferenceTime();
+    auto ength = thedrift.Length();
+    auto reference_momentum = bunch.get_reference_particle().get_momentum();
+    auto m = bunch.get_mass();
+    auto reference_time = thedrift.getReferenceTime();
 
-    for (int part = 0; part < local_num; ++part) {
-        double dpop(particles(part, Bunch::dpop));
-        double xp(particles(part, Bunch::xp));
-        double yp(particles(part, Bunch::yp));
-        double inv_npz =
+    for (size_t part = 0; part < local_num; ++part) {
+        auto dpop(particles(part, Bunch::dpop));
+        auto xp(particles(part, Bunch::xp));
+        auto yp(particles(part, Bunch::yp));
+        auto inv_npz =
             1.0 / sqrt((dpop + 1.0) * (dpop + 1.0) - xp * xp - yp * yp);
-        double lxpr = xp * length * inv_npz;
-        double lypr = yp * length * inv_npz;
-        double D = sqrt(lxpr * lxpr + length * length + lypr * lypr);
-        double p = reference_momentum + dpop * reference_momentum;
-        double E = sqrt(p * p + m * m);
-        double beta = p / E;
-        double x(particles(part, Bunch::x));
-        double y(particles(part, Bunch::y));
-        double cdt(particles(part, Bunch::cdt));
-        x += lxpr;
-        y += lypr;
+        auto lxpr = xp * length * inv_npz;
+        auto lypr = yp * length * inv_npz;
+        auto D = sqrt(lxpr * lxpr + length * length + lypr * lypr);
+        auto p = reference_momentum + dpop * reference_momentum;
+        auto E = sqrt(p * p + m * m);
+        auto beta = p / E;
+        auto x(particles(part, Bunch::x));
+        auto y(particles(part, Bunch::y));
+        auto cdt(particles(part, Bunch::cdt));
         cdt += D / beta - reference_time;
         particles(part, Bunch::x) = x;
         particles(part, Bunch::y) = y;
@@ -87,23 +81,23 @@ propagate_orig(Bunch& bunch, drift& thedrift)
 void
 propagate_double(Bunch& bunch, drift& thedrift)
 {
-    int local_num = bunch.get_local_num();
-    const double length = thedrift.Length();
-    const double reference_momentum =
+    auto local_num = bunch.get_local_num();
+    const auto length = thedrift.Length();
+    const auto reference_momentum =
         bunch.get_reference_particle().get_momentum();
-    const double m = bunch.get_mass();
-    const double reference_time = thedrift.getReferenceTime();
+    const auto m = bunch.get_mass();
+    const auto reference_time = thedrift.getReferenceTime();
     double *RESTRICT xa, *RESTRICT xpa, *RESTRICT ya, *RESTRICT ypa,
         *RESTRICT cdta, *RESTRICT dpopa;
     bunch.set_arrays(xa, xpa, ya, ypa, cdta, dpopa);
 
-    for (int part = 0; part < local_num; ++part) {
-        double x(xa[part]);
-        double xp(xpa[part]);
-        double y(ya[part]);
-        double yp(ypa[part]);
-        double cdt(cdta[part]);
-        double dpop(dpopa[part]);
+    for (size_t part = 0; part < local_num; ++part) {
+        auto x(xa[part]);
+        auto xp(xpa[part]);
+        auto y(ya[part]);
+        auto yp(ypa[part]);
+        auto cdt(cdta[part]);
+        auto dpop(dpopa[part]);
 
         drift_unit(x, y, cdt, xp, yp, dpop, length, reference_momentum, m,
                    reference_time);
@@ -117,21 +111,21 @@ propagate_double(Bunch& bunch, drift& thedrift)
 void
 propagate_gsv(Bunch& bunch, drift& thedrift)
 {
-    int local_num = bunch.get_local_num();
+    auto local_num = bunch.get_local_num();
     if (local_num % GSVector::size != 0) {
         throw std::runtime_error(
             "local number of particles must be a multiple of GSVector::size");
     }
-    const double length = thedrift.Length();
-    const double reference_momentum =
+    const auto length = thedrift.Length();
+    const auto reference_momentum =
         bunch.get_reference_particle().get_momentum();
-    const double m = bunch.get_mass();
-    const double reference_time = thedrift.getReferenceTime();
+    const auto m = bunch.get_mass();
+    const auto reference_time = thedrift.getReferenceTime();
     double *RESTRICT xa, *RESTRICT xpa, *RESTRICT ya, *RESTRICT ypa,
         *RESTRICT cdta, *RESTRICT dpopa;
     bunch.set_arrays(xa, xpa, ya, ypa, cdta, dpopa);
 
-    for (int part = 0; part < local_num; part += GSVector::size) {
+    for (size_t part = 0; part < local_num; part += GSVector::size) {
         GSVector x(&xa[part]);
         GSVector xp(&xpa[part]);
         GSVector y(&ya[part]);
@@ -153,7 +147,7 @@ do_timing(void (*propagator)(Bunch&, drift&), const char* name, Bunch& bunch,
           drift& thedrift, double reference_timing, const int rank)
 {
     double t = 0;
-    const int num_runs = 100;
+    const size_t num_runs = 100;
     auto best_time = std::numeric_limits<double>::max();
     std::vector<double> times(num_runs);
     for (size_t i = 0; i < num_runs; ++i) {
@@ -187,7 +181,7 @@ run_check(void (*propagator)(Bunch&, drift&), const char* name, drift& thedrift,
           int size, int rank)
 {
     const double tolerance = 1.0e-14;
-    const int num_test = 104 * size;
+    const size_t num_test = 104 * size;
     const double real_num = 1.0e12;
     Bunch b1(num_test * size, real_num, size, rank);
     Bunch b2(num_test * size, real_num, size, rank);
@@ -212,11 +206,11 @@ run()
     Bunch bunch(size * particles_per_rank, real_particles, size, rank);
     drift thedrift;
 
-    double reference_timing =
+    auto reference_timing =
         do_timing(&propagate_orig, "orig", bunch, thedrift, 0.0, rank);
 
     run_check(&propagate_double, "optimized", thedrift, size, rank);
-    double opt_timing = do_timing(&propagate_double, "optimized", bunch,
+    auto opt_timing = do_timing(&propagate_double, "optimized", bunch,
                                   thedrift, reference_timing, rank);
 
     if (rank == 0) {

@@ -17,16 +17,16 @@ static const int proton_charge = 1; // Charge in units of e
 class Bunch
 {
 public:
-    static const int x = 0;
-    static const int xp = 1;
-    static const int y = 2;
-    static const int yp = 3;
-    static const int z = 4;
-    static const int zp = 5;
-    static const int cdt = 4;
-    static const int dpop = 5;
-    static const int id = 6;
-    static const int particle_size = 7;
+    static const size_t x = 0;
+    static const size_t xp = 1;
+    static const size_t y = 2;
+    static const size_t yp = 3;
+    static const size_t z = 4;
+    static const size_t zp = 5;
+    static const size_t cdt = 4;
+    static const size_t dpop = 5;
+    static const size_t id = 6;
+    static const size_t particle_size = 7;
 
     typedef Eigen::Matrix<double, Eigen::Dynamic, 7> Particles;
 
@@ -43,14 +43,14 @@ public:
 private:
     Reference_particle reference_particle;
     double* storage;
-    int local_num, total_num;
+    size_t local_num, total_num;
     double real_num;
     Particles local_particles;
     Commxx_sptr comm_sptr;
     AView aview;
 
 public:
-    Bunch(int total_num, double real_num, int mpi_size, int mpi_rank)
+    Bunch(size_t total_num, double real_num, int mpi_size, int mpi_rank)
         : reference_particle(proton_charge, proton_mass,
                              example_gamma * proton_mass),
           local_num(total_num / mpi_size), // jfa FIXME!
@@ -59,15 +59,15 @@ public:
           local_particles(local_num, 7),
           comm_sptr(new Commxx)
     {
-        double* origin = local_particles.data();
+        auto * origin = local_particles.data();
         aview.x = local_particles.col(Bunch::x).data();
         aview.xp = local_particles.col(Bunch::xp).data();
         aview.y = local_particles.col(Bunch::y).data();
         aview.yp = local_particles.col(Bunch::yp).data();
         aview.cdt = local_particles.col(Bunch::cdt).data();
         aview.dpop = local_particles.col(Bunch::dpop).data();
-        for (int part = 0; part < local_num; ++part) {
-            int index = part + mpi_rank * mpi_size;
+        for (size_t part = 0; part < local_num; ++part) {
+            size_t index = part + mpi_rank * mpi_size;
             local_particles(part, Bunch::x) = 1.0e-6 * index;
             local_particles(part, Bunch::xp) = 1.1e-8 * index;
             local_particles(part, Bunch::y) = 1.3e-6 * index;
@@ -75,7 +75,6 @@ public:
             local_particles(part, Bunch::z) = 1.5e-4 * index;
             local_particles(part, Bunch::zp) = 1.5e-7 * index;
             local_particles(part, Bunch::id) = index;
-
         }
     }
 
@@ -90,9 +89,9 @@ public:
 
     double get_mass() const { return reference_particle.get_mass(); }
 
-    int get_local_num() const { return local_num; }
+    size_t get_local_num() const { return local_num; }
 
-    int get_total_num() const { return total_num; }
+    size_t get_total_num() const { return total_num; }
 
     double get_real_num() const { return real_num; }
 
@@ -132,12 +131,22 @@ inline bool
 eigen_check_equal(Bunch::Particles const& a, Bunch::Particles const& b,
                         double tolerance)
 {
+<<<<<<< HEAD
 //    return a.isApprox(b, tolerance);
     for (Eigen::Index i = 0; i < a.rows(); ++i) {
         for (Eigen::Index j = 0; j < a.cols(); j++) {
             if (!floating_point_equal(a(i, j), b(i,j), tolerance)) {
                 std::cerr << "eigen_check_equal:\n";
                 std::cerr << "  a(" << i << "," << j << ") = " << a(i, j)
+=======
+    for (size_t i = a.index_bases()[0];
+         i < a.index_bases()[0] + a.shape()[0]; ++i) {
+        for (size_t j = a.index_bases()[1];
+             j < a.index_bases()[1] + a.shape()[1]; ++j) {
+            if (!floating_point_equal(a[i][j], b[i][j], tolerance)) {
+                std::cerr << "multi_array_check_equal:\n";
+                std::cerr << "  a[" << i << "][" << j << "] = " << a[i][j]
+>>>>>>> auto and size_t, where appropriate
                           << std::endl;
                 std::cerr << "  b(" << i << "," << j << ") = " << b(i, j)
                           << std::endl;
