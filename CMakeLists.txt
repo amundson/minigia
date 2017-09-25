@@ -4,17 +4,11 @@ list(APPEND CMAKE_MODULE_PATH "${MINIGIA_SOURCE_DIR}/CMake")
 
 set (CMAKE_CXX_STANDARD 11)
 
-find_package(MPI REQUIRED)
-include_directories(${MPI_CXX_INCLUDE_PATH})
-
-find_package(Eigen3 REQUIRED)
-include_directories(${EIGEN3_INCLUDE_DIR})
-
 if(DEFINES)
     add_definitions(${DEFINES})
 endif()
 
-find_package(MPI REQUIRED)
+find_package(MPI REQUIRED CXX)
 find_package(Boost 1.58 REQUIRED)
 find_package (Eigen3 3.2 REQUIRED NO_MODULE)
 
