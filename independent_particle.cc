@@ -5,6 +5,9 @@
 #include <vector>
 
 #include <mpi.h>
+#if defined(_OPENMP)
+   #include <omp.h>
+#endif
 
 #include "bunch.h"
 #include "gsvector.h"
@@ -110,6 +113,39 @@ propagate_double(Bunch& bunch, drift& thedrift)
     }
 }
 
+#if defined(_OPENMP)
+void
+propagate_omp_simd(Bunch& bunch, drift& thedrift)
+{
+    auto local_num = bunch.get_local_num();
+    const auto length = thedrift.Length();
+    const auto reference_momentum =
+            bunch.get_reference_particle().get_momentum();
+    const auto m = bunch.get_mass();
+    const auto reference_time = thedrift.getReferenceTime();
+    double *RESTRICT xa, *RESTRICT xpa, *RESTRICT ya, *RESTRICT ypa,
+            *RESTRICT cdta, *RESTRICT dpopa;
+    bunch.set_arrays(xa, xpa, ya, ypa, cdta, dpopa);
+
+#pragma omp simd
+    for (size_t part = 0; part < local_num; ++part) {
+        auto x(xa[part]);
+        auto xp(xpa[part]);
+        auto y(ya[part]);
+        auto yp(ypa[part]);
+        auto cdt(cdta[part]);
+        auto dpop(dpopa[part]);
+
+        drift_unit(x, y, cdt, xp, yp, dpop, length, reference_momentum, m,
+                   reference_time);
+
+        xa[part] = x;
+        ya[part] = y;
+        cdta[part] = cdt;
+    }
+}
+#endif
+
 void
 propagate_gsv(Bunch& bunch, drift& thedrift)
 {
@@ -214,13 +250,18 @@ run()
     run_check(&propagate_double, "optimized", thedrift, size, rank);
     auto opt_timing = do_timing(&propagate_double, "optimized", bunch,
                                   thedrift, reference_timing, rank);
-
     if (rank == 0) {
         std::cout << "GSVector::implementation = " << GSVector::implementation
                   << std::endl;
     }
     run_check(&propagate_gsv, "vectorized", thedrift, size, rank);
     do_timing(&propagate_gsv, "vectorized", bunch, thedrift, opt_timing, rank);
+
+#if defined(_OPENMP)
+    run_check(&propagate_omp_simd, "omp simd", thedrift, size, rank);
+    do_timing(&propagate_omp_simd, "omp simd", bunch, thedrift, opt_timing, rank);
+#endif
+
 }
 
 int
