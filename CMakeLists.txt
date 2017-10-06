@@ -10,7 +10,6 @@ endif()
 
 find_package(MPI REQUIRED CXX)
 find_package(Boost 1.58 REQUIRED)
-find_package (Eigen3 3.2 REQUIRED NO_MODULE)
 
 if(FALSE)
 find_package(FFTW3 REQUIRED)
@@ -29,6 +28,6 @@ add_executable(independent_particle
     )
 
 target_include_directories(independent_particle PRIVATE vectorclass)
+target_include_directories(independent_particle PRIVATE eigen)
 target_link_libraries(independent_particle PRIVATE MPI::MPI_CXX)
-target_link_libraries(independent_particle PRIVATE Eigen3::Eigen)
 
