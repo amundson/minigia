@@ -9,7 +9,7 @@ if(DEFINES)
 endif()
 
 find_package(MPI REQUIRED CXX)
-find_package(Boost 1.58 REQUIRED)
+find_package(Boost 1.53 REQUIRED)
 
 if(FALSE)
 find_package(FFTW3 REQUIRED)
