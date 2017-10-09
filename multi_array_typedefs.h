@@ -5,8 +5,6 @@
 #include "boost/shared_array.hpp"
 #include <complex>
 
-#include "boost/align/aligned_allocator.hpp"
-
 typedef boost::multi_array_types::index_range range;
 typedef boost::multi_array_types::extent_range extent_range;
 
@@ -39,9 +37,6 @@ typedef boost::detail::multi_array::multi_array_view<double, 1> MArray1d_view;
 typedef Raw_multi_array<double, 1> Raw_MArray1d;
 
 typedef boost::multi_array<double, 2> MArray2d;
-typedef boost::multi_array<double, 2,
-                           boost::alignment::aligned_allocator<double, 64> >
-    MArray2da;
 typedef boost::multi_array_ref<double, 2> MArray2d_ref;
 typedef boost::const_multi_array_ref<double, 2> Const_MArray2d_ref;
 typedef boost::detail::multi_array::multi_array_view<double, 2> MArray2d_view;
