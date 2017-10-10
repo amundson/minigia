@@ -13,6 +13,6 @@
 ## Building
     mkdir build 
     cd build
-    CXX=/usr/local/bin/g++-7 cmake -DCMAKE_BUILD_TYPE=Release \
+    CXX=/usr/local/bin/g++-7 cmake .. -DCMAKE_BUILD_TYPE=Release \
         -DDEFINES='-DGSV_AVX -ffast-math'
     make
