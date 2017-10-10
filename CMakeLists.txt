@@ -1,8 +1,7 @@
-project(MINIGIA)
 cmake_minimum_required(VERSION 3.9)
+project(MINIGIA)
+set(CMAKE_CXX_STANDARD 11)
 list(APPEND CMAKE_MODULE_PATH "${MINIGIA_SOURCE_DIR}/CMake")
-
-set (CMAKE_CXX_STANDARD 11)
 
 if(DEFINES)
     add_definitions(${DEFINES})
