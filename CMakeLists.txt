@@ -31,5 +31,7 @@ add_executable(independent_particle
 target_include_directories(independent_particle PRIVATE vectorclass)
 target_include_directories(independent_particle PRIVATE eigen)
 target_link_libraries(independent_particle PRIVATE MPI::MPI_CXX)
-target_link_libraries(independent_particle PRIVATE OpenMP::OpenMP_CXX)
+if(OpenMP_CXX_FOUND)
+    target_link_libraries(independent_particle PRIVATE OpenMP::OpenMP_CXX)
+endif()
 
