@@ -10,6 +10,7 @@ endif()
 
 find_package(MPI REQUIRED CXX)
 find_package(Boost 1.53 REQUIRED)
+find_package(OpenMP) 
 
 if(FALSE)
 find_package(FFTW3 REQUIRED)
@@ -30,4 +31,5 @@ add_executable(independent_particle
 target_include_directories(independent_particle PRIVATE vectorclass)
 target_include_directories(independent_particle PRIVATE eigen)
 target_link_libraries(independent_particle PRIVATE MPI::MPI_CXX)
+target_link_libraries(independent_particle PRIVATE OpenMP::OpenMP_CXX)
 
