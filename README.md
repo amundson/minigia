@@ -7,9 +7,12 @@
 	* [http://www.agner.org/optimize/#vectorclass](http://www.agner.org/optimize/#vectorclass)
 	* see vectorclass/license.txt
 
+* Eigen: This distribution includes the Eigen class library.
+    * [http://eigen.tuxfamily.org/](http://eigen.tuxfamily.org/)
+
 ## Building
     mkdir build 
     cd build
-    cmake -DCMAKE_BUILD_TYPE=Release -DDEFINES='-DGSV_AVX' \
-        -DCMAKE_CXX_COMPILER=/usr/local/bin/g++-6 ..
+    CXX=/usr/local/bin/g++-7 cmake -DCMAKE_BUILD_TYPE=Release \
+        -DDEFINES='-DGSV_AVX -ffast-math'
     make
