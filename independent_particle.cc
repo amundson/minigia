@@ -10,7 +10,7 @@
 #endif
 
 #include "bunch.h"
-#include "gsvector.h"
+//#include "gsvector.h"
 
 const size_t particles_per_rank = 100000;
 const double real_particles = 1.0e12;
@@ -127,7 +127,7 @@ propagate_omp_simd(Bunch& bunch, drift& thedrift)
             *RESTRICT cdta, *RESTRICT dpopa;
     bunch.set_arrays(xa, xpa, ya, ypa, cdta, dpopa);
 
-#pragma omp simd
+//pragma omp simd
     for (size_t part = 0; part < local_num; ++part) {
         auto x(xa[part]);
         auto xp(xpa[part]);
@@ -146,6 +146,7 @@ propagate_omp_simd(Bunch& bunch, drift& thedrift)
 }
 #endif
 
+#if 0
 void
 propagate_gsv(Bunch& bunch, drift& thedrift)
 {
@@ -179,6 +180,7 @@ propagate_gsv(Bunch& bunch, drift& thedrift)
         cdt.store(&cdta[part]);
     }
 }
+#endif
 
 double
 do_timing(void (*propagator)(Bunch&, drift&), const char* name, Bunch& bunch,
@@ -250,12 +252,14 @@ run()
     run_check(&propagate_double, "optimized", thedrift, size, rank);
     auto opt_timing = do_timing(&propagate_double, "optimized", bunch,
                                   thedrift, reference_timing, rank);
+#if 0
     if (rank == 0) {
         std::cout << "GSVector::implementation = " << GSVector::implementation
                   << std::endl;
     }
     run_check(&propagate_gsv, "vectorized", thedrift, size, rank);
     do_timing(&propagate_gsv, "vectorized", bunch, thedrift, opt_timing, rank);
+#endif
 
 #if defined(_OPENMP)
     run_check(&propagate_omp_simd, "omp simd", thedrift, size, rank);
