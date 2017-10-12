@@ -158,7 +158,7 @@ propagate_omp_simd2(Bunch& bunch, drift& thedrift)
             *RESTRICT cdta, *RESTRICT dpopa;
     bunch.set_arrays(xa, xpa, ya, ypa, cdta, dpopa);
 
-#pragma omp simd
+
     for (size_t part = 0; part < local_num; ++part) {
         drift_unit(xa[part], ya[part], cdta[part], xpa[part], ypa[part], dpopa[part],
                 length, reference_momentum, m, reference_time);
@@ -176,7 +176,7 @@ propagate_omp_simd3(Bunch& bunch, drift& thedrift)
     const auto reference_time = thedrift.getReferenceTime();
     auto & particles(bunch.get_local_particles());
     
-#pragma omp simd
+
     for (size_t part = 0; part < local_num; ++part) {
         drift_unit(particles(part, Bunch::x), particles(part, Bunch::y), 
                 particles(part, Bunch::cdt), particles(part, Bunch::xp), 
