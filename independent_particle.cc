@@ -144,6 +144,46 @@ propagate_omp_simd(Bunch& bunch, drift& thedrift)
         cdta[part] = cdt;
     }
 }
+
+void
+propagate_omp_simd2(Bunch& bunch, drift& thedrift)
+{
+    auto local_num = bunch.get_local_num();
+    const auto length = thedrift.Length();
+    const auto reference_momentum =
+            bunch.get_reference_particle().get_momentum();
+    const auto m = bunch.get_mass();
+    const auto reference_time = thedrift.getReferenceTime();
+    double *RESTRICT xa, *RESTRICT xpa, *RESTRICT ya, *RESTRICT ypa,
+            *RESTRICT cdta, *RESTRICT dpopa;
+    bunch.set_arrays(xa, xpa, ya, ypa, cdta, dpopa);
+
+#pragma omp simd
+    for (size_t part = 0; part < local_num; ++part) {
+        drift_unit(xa[part], ya[part], cdta[part], xpa[part], ypa[part], dpopa[part],
+                length, reference_momentum, m, reference_time);
+    }
+}
+
+void
+propagate_omp_simd3(Bunch& bunch, drift& thedrift)
+{
+    auto local_num = bunch.get_local_num();
+    const auto length = thedrift.Length();
+    const auto reference_momentum =
+            bunch.get_reference_particle().get_momentum();
+    const auto m = bunch.get_mass();
+    const auto reference_time = thedrift.getReferenceTime();
+    auto & particles(bunch.get_local_particles());
+    
+#pragma omp simd
+    for (size_t part = 0; part < local_num; ++part) {
+        drift_unit(particles(part, Bunch::x), particles(part, Bunch::y), 
+                particles(part, Bunch::cdt), particles(part, Bunch::xp), 
+                particles(part, Bunch::yp), particles(part, Bunch::dpop),
+                length, reference_momentum, m, reference_time);
+    }
+}
 #endif
 
 void
@@ -260,6 +300,10 @@ run()
 #if defined(_OPENMP)
     run_check(&propagate_omp_simd, "omp simd", thedrift, size, rank);
     do_timing(&propagate_omp_simd, "omp simd", bunch, thedrift, opt_timing, rank);
+    run_check(&propagate_omp_simd2, "omp simd2", thedrift, size, rank);
+    do_timing(&propagate_omp_simd2, "omp simd2", bunch, thedrift, opt_timing, rank);
+    run_check(&propagate_omp_simd3, "omp simd3", thedrift, size, rank);
+    do_timing(&propagate_omp_simd3, "omp simd3", bunch, thedrift, opt_timing, rank);
 #endif
 
 }
