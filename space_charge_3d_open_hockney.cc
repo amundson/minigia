@@ -523,12 +523,12 @@ Space_charge_3d_open_hockney::apply_kick(Bunch & bunch,
 
     #pragma omp parallel for
     for (int part = 0; part < bunch.get_local_num(); ++part) {
-        double x = bunch.get_local_particles()[part][Bunch::x];
-        double y = bunch.get_local_particles()[part][Bunch::y];
-        double z = bunch.get_local_particles()[part][Bunch::z];
+        double x = bunch.get_local_particles()(part, Bunch::x);
+        double y = bunch.get_local_particles()(part, Bunch::y);
+        double z = bunch.get_local_particles()(part, Bunch::z);
         double grid_val = interpolate_rectangular_zyx(x, y, z, domain,
                 grid_points);
-        bunch.get_local_particles()[part][ps_component] += factor * grid_val;
+        bunch.get_local_particles()(part, ps_component) += factor * grid_val;
     }
 }
 

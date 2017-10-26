@@ -8,10 +8,10 @@ Core_diagnostics::calculate_mean(Bunch const& bunch)
 {
     MArray1d mean(boost::extents[6]);
     double sum[6] = { 0, 0, 0, 0, 0, 0 };
-    Const_MArray2d_ref particles(bunch.get_local_particles());
+    auto particles(bunch.get_local_particles());
     for (int part = 0; part < bunch.get_local_num(); ++part) {
         for (int i = 0; i < 6; ++i) {
-            sum[i] += particles[part][i];
+            sum[i] += particles(part, i);
         }
     }
     double t;
@@ -31,9 +31,9 @@ Core_diagnostics::calculate_z_mean(Bunch const& bunch)
 {
     double sum = 0;
     double mean;
-    Const_MArray2d_ref particles(bunch.get_local_particles());
+    auto particles(bunch.get_local_particles());
     for (int part = 0; part < bunch.get_local_num(); ++part) {
-        sum += particles[part][4];
+        sum += particles(part, 4);
     }
     MPI_Allreduce(&sum, &mean, 1, MPI_DOUBLE, MPI_SUM, bunch.get_comm_sptr()->get());
     mean /= bunch.get_total_num();
@@ -45,9 +45,9 @@ Core_diagnostics::calculate_z_std(Bunch const& bunch, double const& mean)
 {
     double sum = 0;
     double std;
-    Const_MArray2d_ref particles(bunch.get_local_particles());
+    auto particles(bunch.get_local_particles());
     for (int part = 0; part < bunch.get_local_num(); ++part) {
-        double diff = particles[part][4] - mean;
+        double diff = particles(part, 4) - mean;
         sum += diff * diff;
     }
     MPI_Allreduce(&sum, &std, 1, MPI_DOUBLE, MPI_SUM, bunch.get_comm_sptr()->get());
@@ -60,10 +60,10 @@ Core_diagnostics::calculate_spatial_mean(Bunch const& bunch)
 {
     MArray1d mean(boost::extents[3]);
     double sum[3] = { 0, 0, 0 };
-    Const_MArray2d_ref particles(bunch.get_local_particles());
+    auto particles(bunch.get_local_particles());
     for (int part = 0; part < bunch.get_local_num(); ++part) {
         for (int i = 0; i < 3; ++i) {
-            sum[i] += particles[part][i * 2];
+            sum[i] += particles(part, i * 2);
         }
     }
     double t;
@@ -83,10 +83,10 @@ Core_diagnostics::calculate_std(Bunch const& bunch, MArray1d_ref const& mean)
 {
     MArray1d std(boost::extents[6]);
     double sum[6] = { 0, 0, 0, 0, 0, 0 };
-    Const_MArray2d_ref particles(bunch.get_local_particles());
+    auto particles(bunch.get_local_particles());
     for (int part = 0; part < bunch.get_local_num(); ++part) {
         for (int i = 0; i < 6; ++i) {
-            double diff = particles[part][i] - mean[i];
+            double diff = particles(part, i) - mean[i];
             sum[i] += diff * diff;
         }
     }
@@ -103,10 +103,10 @@ Core_diagnostics::calculate_spatial_std(Bunch const& bunch, MArray1d_ref const& 
 {
     MArray1d std(boost::extents[3]);
     double sum[3] = { 0, 0, 0 };
-    Const_MArray2d_ref particles(bunch.get_local_particles());
+    auto particles(bunch.get_local_particles());
     for (int part = 0; part < bunch.get_local_num(); ++part) {
         for (int i = 0; i < 3; ++i) {
-            double diff = particles[part][i * 2] - mean[i];
+            double diff = particles(part, i * 2) - mean[i];
             sum[i] += diff * diff;
         }
     }
@@ -129,12 +129,12 @@ Core_diagnostics::calculate_mom2(Bunch const& bunch, MArray1d_ref const& mean)
             sum2[i][j] = 0.0;
         }
     }
-    Const_MArray2d_ref particles(bunch.get_local_particles());
+    auto particles(bunch.get_local_particles());
     for (int part = 0; part < bunch.get_local_num(); ++part) {
         for (int i = 0; i < 6; ++i) {
-            double diff_i = particles[part][i] - mean[i];
+            double diff_i = particles(part, i) - mean[i];
             for (int j = 0; j <= i; ++j) {
-                double diff_j = particles[part][j] - mean[j];
+                double diff_j = particles(part, j) - mean[j];
                 sum2[i][j] += diff_i * diff_j;
             }
         }
@@ -159,16 +159,16 @@ Core_diagnostics::calculate_min(Bunch const& bunch)
 {
     MArray1d min(boost::extents[3]);
     double lmin[3] = { 1.0e100, 1.0e100, 1.0e100 };
-    Const_MArray2d_ref particles(bunch.get_local_particles());
+    auto particles(bunch.get_local_particles());
     for (int part = 0; part < bunch.get_local_num(); ++part) {
-        if (particles[part][0] < lmin[0]) {
-            lmin[0] = particles[part][0];
+        if (particles(part, 0) < lmin[0]) {
+            lmin[0] = particles(part, 0);
         }
-        if (particles[part][2] < lmin[1]) {
-            lmin[1] = particles[part][2];
+        if (particles(part, 2) < lmin[1]) {
+            lmin[1] = particles(part, 2);
         }
-        if (particles[part][4] < lmin[2]) {
-            lmin[2] = particles[part][4];
+        if (particles(part, 4) < lmin[2]) {
+            lmin[2] = particles(part, 4);
         }
 
     }
@@ -183,16 +183,16 @@ Core_diagnostics::calculate_max(Bunch const& bunch)
 {
     MArray1d max(boost::extents[3]);
     double lmax[3] = { -1.0e100, -1.0e100, -1.0e100 };
-    Const_MArray2d_ref particles(bunch.get_local_particles());
+    auto particles(bunch.get_local_particles());
     for (int part = 0; part < bunch.get_local_num(); ++part) {
-        if (particles[part][0] > lmax[0]) {
-            lmax[0] = particles[part][0];
+        if (particles(part, 0) > lmax[0]) {
+            lmax[0] = particles(part, 0);
         }
-        if (particles[part][2] > lmax[1]) {
-            lmax[1] = particles[part][2];
+        if (particles(part, 2) > lmax[1]) {
+            lmax[1] = particles(part, 2);
         }
-        if (particles[part][4] > lmax[2]) {
-            lmax[2] = particles[part][4];
+        if (particles(part, 4) > lmax[2]) {
+            lmax[2] = particles(part, 4);
         }
 
     }

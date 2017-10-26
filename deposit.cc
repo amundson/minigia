@@ -5,15 +5,13 @@
 #include <iostream>
 
 /// Deposit charge using Cloud-in-Cell (CIC) algorithm.
-/// The indices on the rho array are in an unusual order: [z][y][x],
-/// so that the FFTW routines can distribute along the z-axis.
-/// The resulting charge density has units C/m^3.
+/// The indices on the rho array are in an unusual order: (z, y)/// The resulting charge density has units C/m^3.
 void
 deposit_charge_rectangular_zyx(Rectangular_grid & rho_grid, Bunch const& bunch,
         bool zero_first)
 {
     MArray3d_ref rho(rho_grid.get_grid_points());
-    Const_MArray2d_ref parts(bunch.get_local_particles());
+    auto parts(bunch.get_local_particles());
     if (zero_first) {
         for (unsigned int i = 0; i < rho.shape()[0]; ++i) {
             for (unsigned int j = 0; j < rho.shape()[1]; ++j) {
@@ -36,7 +34,7 @@ deposit_charge_rectangular_zyx(Rectangular_grid & rho_grid, Bunch const& bunch,
             // domain doesn't know about xyz->zyx transformation, so we
             // do it in the order of arguments here
             rho_grid.get_domain().get_leftmost_indices_offsets(
-                    parts[n][4], parts[n][2], parts[n][0], iz, iy, ix, offz,
+                    parts(n, 4), parts(n, 2), parts(n, 0), iz, iy, ix, offz,
                     offy, offx);
             for (int i = 0; i < 2; ++i) {
                 for (int j = 0; j < 2; ++j) {
@@ -67,7 +65,7 @@ deposit_charge_rectangular_zyx(Rectangular_grid & rho_grid, Bunch const& bunch,
             // domain doesn't know about xyz->zyx transformation, so we
             // do it in the order of arguments here
             rho_grid.get_domain().get_leftmost_indices_offsets(
-                    parts[n][4], parts[n][2], parts[n][0], iz, iy, ix, offz,
+                    parts(n, 4), parts(n, 2), parts(n, 0), iz, iy, ix, offz,
                     offy, offx);
             for (int i = 0; i < 2; ++i) {
                 for (int j = 0; j < 2; ++j) {
@@ -106,7 +104,7 @@ deposit_charge_rectangular_xyz(Rectangular_grid & rho_grid, Bunch const& bunch,
             
     
     MArray3d_ref rho(rho_grid.get_grid_points());
-    Const_MArray2d_ref parts(bunch.get_local_particles());
+    auto parts(bunch.get_local_particles());
  //   double total_charge_per_cell_vol(0.);
     if (zero_first) {    
         for (unsigned int i = 0; i < rho.shape()[0]; ++i) {
@@ -133,7 +131,7 @@ deposit_charge_rectangular_xyz(Rectangular_grid & rho_grid, Bunch const& bunch,
     if (rho_grid.get_domain().is_periodic()) {
         for (int n = 0; n < bunch.get_local_num(); ++n) {
             if (rho_grid.get_domain().get_leftmost_indices_offsets(
-                        parts[n][0], parts[n][2], parts[n][4], ix, iy, iz, offx, offy, offz)){
+                        parts(n, 0), parts(n, 2), parts(n, 4), ix, iy, iz, offx, offy, offz)){
                 for (int i = 0; i < 2; ++i) {
                     for (int j = 0; j < 2; ++j) {
                         int cellx = ix + i;
@@ -162,7 +160,7 @@ deposit_charge_rectangular_xyz(Rectangular_grid & rho_grid, Bunch const& bunch,
     else{
         for (int n = 0; n < bunch.get_local_num(); ++n) {
             if (rho_grid.get_domain().get_leftmost_indices_offsets(
-                        parts[n][0], parts[n][2], parts[n][4], ix, iy, iz, offx, offy, offz)){
+                        parts(n, 0), parts(n, 2), parts(n, 4), ix, iy, iz, offx, offy, offz)){
                 for (int i = 0; i < 2; ++i) {
                     for (int j = 0; j < 2; ++j) {
                         for (int k = 0; k < 2; ++k) {
@@ -190,7 +188,7 @@ deposit_charge_rectangular_2d(Rectangular_grid & rho_grid, Bunch const& bunch,
 {
     MArray2dc_ref rho_2dc(rho_grid.get_grid_points_2dc());
     MArray1d_ref rho_1d(rho_grid.get_grid_points_1d());
-    Const_MArray2d_ref parts(bunch.get_local_particles());
+    auto parts(bunch.get_local_particles());
     std::vector<int > grid_shape(3);
     grid_shape[0] = rho_2dc.shape()[0];
     grid_shape[1] = rho_2dc.shape()[1];
@@ -219,7 +217,7 @@ deposit_charge_rectangular_2d(Rectangular_grid & rho_grid, Bunch const& bunch,
     for (int n = 0; n < bunch.get_local_num(); ++n) {
         // no xyz->zyx transformation
         rho_grid.get_domain().get_leftmost_indices_offsets(
-                parts[n][0], parts[n][2], parts[n][4], ix, iy, iz, offx,
+                parts(n, 0), parts(n, 2), parts(n, 4), ix, iy, iz, offx,
                 offy, offz);
         for (int i = 0; i < 2; ++i) {
             for (int j = 0; j < 2; ++j) {
@@ -249,7 +247,7 @@ deposit_charge_rectangular_2d(Rectangular_grid & rho_grid,
 {
     MArray2dc_ref rho_2dc(rho_grid.get_grid_points_2dc());
     MArray1d_ref rho_1d(rho_grid.get_grid_points_1d());
-    Const_MArray2d_ref parts(bunch.get_local_particles());
+    auto parts(bunch.get_local_particles());
     std::vector<int > grid_shape(3);
     grid_shape[0] = rho_2dc.shape()[0];
     grid_shape[1] = rho_2dc.shape()[1];
@@ -278,7 +276,7 @@ deposit_charge_rectangular_2d(Rectangular_grid & rho_grid,
     for (int n = 0; n < bunch.get_local_num(); ++n) {
         // no xyz->zyx transformation
         rho_grid.get_domain().get_leftmost_indices_offsets(
-                parts[n][0], parts[n][2], parts[n][4], ix, iy, iz, offx,
+                parts(n, 0), parts(n, 2), parts(n, 4), ix, iy, iz, offx,
                 offy, offz);
         particle_bin.m[n][0] = ix;
         particle_bin.m[n][1] = offx;
