@@ -9,11 +9,8 @@ endif()
 
 find_package(MPI REQUIRED CXX)
 find_package(Boost 1.41 REQUIRED)
-find_package(OpenMP) 
-
-if(FALSE)
-find_package(FFTW3 REQUIRED)
-endif()
+find_package(OpenMP)
+find_package(FFTW REQUIRED MPI)
 
 add_executable(independent_particle
     independent_particle.cc
@@ -34,3 +31,41 @@ if(OpenMP_CXX_FOUND)
     target_link_libraries(independent_particle PRIVATE OpenMP::OpenMP_CXX)
 endif()
 
+add_executable(space_charge_3d
+    space_charge_3d.cc
+    space_charge_3d_open_hockney.cc
+    space_charge_3d_open_hockney.h
+    commxx.cc
+    commxx.h
+    commxx_divider.cc
+    commxx_divider.h
+    core_diagnostics.cc
+    core_diagnostics.h
+    deposit.cc
+    deposit.h
+    distributed_fft3d.cc
+    distributed_fft3d.h
+    distributed_rectangular_grid.cc
+    distributed_rectangular_grid.h
+    interpolate_rectangular_zyx.h
+    math_constants.h
+    multi_array_offsets.h
+    rectangular_grid.cc
+    rectangular_grid.h
+    rectangular_grid_domain.cc
+    rectangular_grid_domain.h
+    simple_timer.h
+    space_charge_3d.cc
+    space_charge_3d_open_hockney.cc
+    bunch.h
+    four_momentum.h
+    gsvector.h
+    multi_array_typedefs.h
+    physical_constants.h
+    reference_particle.h
+    restrict_extension.h
+    )
+target_include_directories(space_charge_3d PRIVATE vectorclass)
+target_include_directories(space_charge_3d PRIVATE eigen)
+target_link_libraries(space_charge_3d PRIVATE MPI::MPI_CXX)
+target_link_libraries(space_charge_3d PRIVATE ${FFTW_LIBRARIES})
