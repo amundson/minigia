@@ -42,14 +42,14 @@ public:
 
 private:
     Reference_particle reference_particle;
-    size_t local_num, total_num;
+    long local_num, total_num;
     double real_num;
     Particles local_particles;
     Commxx_sptr comm_sptr;
     AView aview;
 
 public:
-    Bunch(size_t total_num, double real_num, int mpi_size, int mpi_rank)
+    Bunch(long total_num, double real_num, int mpi_size, int mpi_rank)
         : reference_particle(proton_charge, proton_mass,
                              example_gamma * proton_mass),
           local_num(total_num / mpi_size), // jfa FIXME!
@@ -87,9 +87,9 @@ public:
 
     double get_mass() const { return reference_particle.get_mass(); }
 
-    size_t get_local_num() const { return local_num; }
+    long get_local_num() const { return local_num; }
 
-    size_t get_total_num() const { return total_num; }
+    long get_total_num() const { return total_num; }
 
     double get_real_num() const { return real_num; }
 
