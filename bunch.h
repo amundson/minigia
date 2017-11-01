@@ -17,16 +17,16 @@ static const int proton_charge = 1; // Charge in units of e
 class Bunch
 {
 public:
-    static const size_t x = 0;
-    static const size_t xp = 1;
-    static const size_t y = 2;
-    static const size_t yp = 3;
-    static const size_t z = 4;
-    static const size_t zp = 5;
-    static const size_t cdt = 4;
-    static const size_t dpop = 5;
-    static const size_t id = 6;
-    static const size_t particle_size = 7;
+    static const Eigen::Index x = 0;
+    static const Eigen::Index xp = 1;
+    static const Eigen::Index y = 2;
+    static const Eigen::Index yp = 3;
+    static const Eigen::Index z = 4;
+    static const Eigen::Index zp = 5;
+    static const Eigen::Index cdt = 4;
+    static const Eigen::Index dpop = 5;
+    static const Eigen::Index id = 6;
+    static const Eigen::Index particle_size = 7;
 
     typedef Eigen::Matrix<double, Eigen::Dynamic, 7> Particles;
 
@@ -42,7 +42,6 @@ public:
 
 private:
     Reference_particle reference_particle;
-    double* storage;
     size_t local_num, total_num;
     double real_num;
     Particles local_particles;
@@ -59,15 +58,14 @@ public:
           local_particles(local_num, 7),
           comm_sptr(new Commxx)
     {
-        auto * origin = local_particles.data();
         aview.x = local_particles.col(Bunch::x).data();
         aview.xp = local_particles.col(Bunch::xp).data();
         aview.y = local_particles.col(Bunch::y).data();
         aview.yp = local_particles.col(Bunch::yp).data();
         aview.cdt = local_particles.col(Bunch::cdt).data();
         aview.dpop = local_particles.col(Bunch::dpop).data();
-        for (size_t part = 0; part < local_num; ++part) {
-            size_t index = part + mpi_rank * mpi_size;
+        for (Eigen::Index part = 0; part < local_num; ++part) {
+            Eigen::Index index = part + mpi_rank * mpi_size;
             local_particles(part, Bunch::x) = 1.0e-6 * index;
             local_particles(part, Bunch::xp) = 1.1e-8 * index;
             local_particles(part, Bunch::y) = 1.3e-6 * index;
@@ -101,7 +99,6 @@ public:
                     double* RESTRICT& ya, double* RESTRICT& ypa,
                     double* RESTRICT& cdta, double* RESTRICT& dpopa)
     {
-        double* origin = local_particles.data();
         xa = local_particles.col(Bunch::x).data();
         xpa = local_particles.col(Bunch::xp).data();
         ya = local_particles.col(Bunch::y).data();
