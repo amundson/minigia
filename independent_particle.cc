@@ -10,6 +10,7 @@
 #endif
 
 #include "bunch.h"
+#include "bunch_data_paths.h"
 #include "gsvector.h"
 
 const int particles_per_rank = 100000;
@@ -281,7 +282,7 @@ run()
         exit(error);
     }
 
-    Bunch bunch(size * particles_per_rank, real_particles, size, rank);
+    Bunch bunch(bunch_in_0_path);
     drift thedrift;
 
     auto reference_timing =

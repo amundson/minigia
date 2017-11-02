@@ -26,7 +26,7 @@ add_executable(independent_particle
     reference_particle.h
     restrict_extension.h
     )
-
+target_include_directories(independent_particle PRIVATE ${MINIGIA_BINARY_DIR})
 target_include_directories(independent_particle PRIVATE vectorclass)
 target_include_directories(independent_particle PRIVATE eigen)
 target_link_libraries(independent_particle PRIVATE MPI::MPI_CXX)
