@@ -12,7 +12,7 @@
 #include "bunch.h"
 #include "gsvector.h"
 
-const size_t particles_per_rank = 100000;
+const int particles_per_rank = 100000;
 const double real_particles = 1.0e12;
 
 const double dummy_length = 2.1;
@@ -59,7 +59,7 @@ propagate_orig(Bunch& bunch, drift& thedrift)
     auto m = bunch.get_mass();
     auto reference_time = thedrift.getReferenceTime();
 
-    for (size_t part = 0; part < local_num; ++part) {
+    for (Eigen::Index part = 0; part < local_num; ++part) {
         auto dpop(particles(part, Bunch::dpop));
         auto xp(particles(part, Bunch::xp));
         auto yp(particles(part, Bunch::yp));
@@ -96,7 +96,7 @@ propagate_double(Bunch& bunch, drift& thedrift)
         *RESTRICT cdta, *RESTRICT dpopa;
     bunch.set_arrays(xa, xpa, ya, ypa, cdta, dpopa);
 
-    for (size_t part = 0; part < local_num; ++part) {
+    for (int part = 0; part < local_num; ++part) {
         auto x(xa[part]);
         auto xp(xpa[part]);
         auto y(ya[part]);
@@ -128,7 +128,7 @@ propagate_omp_simd(Bunch& bunch, drift& thedrift)
     bunch.set_arrays(xa, xpa, ya, ypa, cdta, dpopa);
 
 #pragma omp simd
-    for (size_t part = 0; part < local_num; ++part) {
+    for (int part = 0; part < local_num; ++part) {
         auto x(xa[part]);
         auto xp(xpa[part]);
         auto y(ya[part]);
@@ -159,7 +159,7 @@ propagate_omp_simd2(Bunch& bunch, drift& thedrift)
     bunch.set_arrays(xa, xpa, ya, ypa, cdta, dpopa);
 
 #pragma omp simd
-    for (size_t part = 0; part < local_num; ++part) {
+    for (int part = 0; part < local_num; ++part) {
         drift_unit(xa[part], ya[part], cdta[part], xpa[part], ypa[part], dpopa[part],
                 length, reference_momentum, m, reference_time);
     }
@@ -177,7 +177,7 @@ propagate_omp_simd3(Bunch& bunch, drift& thedrift)
     auto & particles(bunch.get_local_particles());
     
 #pragma omp simd
-    for (size_t part = 0; part < local_num; ++part) {
+    for (Eigen::Index part = 0; part < local_num; ++part) {
         drift_unit(particles(part, Bunch::x), particles(part, Bunch::y), 
                 particles(part, Bunch::cdt), particles(part, Bunch::xp), 
                 particles(part, Bunch::yp), particles(part, Bunch::dpop),
@@ -203,7 +203,7 @@ propagate_gsv(Bunch& bunch, drift& thedrift)
         *RESTRICT cdta, *RESTRICT dpopa;
     bunch.set_arrays(xa, xpa, ya, ypa, cdta, dpopa);
 
-    for (size_t part = 0; part < local_num; part += GSVector::size) {
+    for (int part = 0; part < local_num; part += GSVector::size) {
         GSVector x(&xa[part]);
         GSVector xp(&xpa[part]);
         GSVector y(&ya[part]);
@@ -225,7 +225,7 @@ do_timing(void (*propagator)(Bunch&, drift&), const char* name, Bunch& bunch,
           drift& thedrift, double reference_timing, const int rank)
 {
     double t = 0;
-    const size_t num_runs = 100;
+    const int num_runs = 100;
     auto best_time = std::numeric_limits<double>::max();
     std::vector<double> times(num_runs);
     for (size_t i = 0; i < num_runs; ++i) {
@@ -259,7 +259,7 @@ run_check(void (*propagator)(Bunch&, drift&), const char* name, drift& thedrift,
           int size, int rank)
 {
     const double tolerance = 1.0e-14;
-    const size_t num_test = 104 * size;
+    const int num_test = 104 * size;
     const double real_num = 1.0e12;
     Bunch b1(num_test * size, real_num, size, rank);
     Bunch b2(num_test * size, real_num, size, rank);
