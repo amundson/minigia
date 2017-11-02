@@ -85,7 +85,7 @@ public:
     }
 
     Bunch(const char * filename)
-        : reference_particle(proton_charge, proton_mass, 0),
+        : reference_particle(proton_charge, proton_mass, proton_mass),
           comm_sptr(new Commxx)
     {
         std::ifstream in(filename);
