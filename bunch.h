@@ -14,6 +14,8 @@ static const double proton_mass = 0.938272046; // Mass of proton [GeV/c^2]
 static const double example_gamma = 10.0;
 static const int proton_charge = 1; // Charge in units of e
 
+static constexpr int particle_size_workaround = 7;
+
 class Bunch
 {
 public:
@@ -26,7 +28,7 @@ public:
     static const Eigen::Index cdt = 4;
     static const Eigen::Index dpop = 5;
     static const Eigen::Index id = 6;
-    static const Eigen::Index particle_size = 7;
+    static const int particle_size = particle_size_workaround;
 
     typedef Eigen::Matrix<double, Eigen::Dynamic, 7> Particles;
 
@@ -55,7 +57,7 @@ public:
           local_num(total_num / mpi_size), // jfa FIXME!
           total_num(total_num),
           real_num(real_num),
-          local_particles(local_num, 7),
+          local_particles(local_num, particle_size_workaround),
           comm_sptr(new Commxx)
     {
         aview.x = local_particles.col(Bunch::x).data();
