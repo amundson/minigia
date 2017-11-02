@@ -2,6 +2,7 @@
 #define BUNCH_H_
 
 #include <iostream>
+#include <fstream>
 #include <Eigen/Dense>
 #include "multi_array_typedefs.h"
 #include "reference_particle.h"
@@ -50,6 +51,16 @@ private:
     Commxx_sptr comm_sptr;
     AView aview;
 
+    void init_aview()
+    {
+        aview.x = local_particles.col(Bunch::x).data();
+        aview.xp = local_particles.col(Bunch::xp).data();
+        aview.y = local_particles.col(Bunch::y).data();
+        aview.yp = local_particles.col(Bunch::yp).data();
+        aview.cdt = local_particles.col(Bunch::cdt).data();
+        aview.dpop = local_particles.col(Bunch::dpop).data();
+    }
+
 public:
     Bunch(long total_num, double real_num, int mpi_size, int mpi_rank)
         : reference_particle(proton_charge, proton_mass,
@@ -60,12 +71,7 @@ public:
           local_particles(local_num, particle_size_workaround),
           comm_sptr(new Commxx)
     {
-        aview.x = local_particles.col(Bunch::x).data();
-        aview.xp = local_particles.col(Bunch::xp).data();
-        aview.y = local_particles.col(Bunch::y).data();
-        aview.yp = local_particles.col(Bunch::yp).data();
-        aview.cdt = local_particles.col(Bunch::cdt).data();
-        aview.dpop = local_particles.col(Bunch::dpop).data();
+        init_aview();
         for (Eigen::Index part = 0; part < local_num; ++part) {
             Eigen::Index index = part + mpi_rank * mpi_size;
             local_particles(part, Bunch::x) = 1.0e-6 * index;
@@ -75,6 +81,29 @@ public:
             local_particles(part, Bunch::z) = 1.5e-4 * index;
             local_particles(part, Bunch::zp) = 1.5e-7 * index;
             local_particles(part, Bunch::id) = index;
+        }
+    }
+
+    Bunch(const char * filename)
+        : reference_particle(proton_charge, proton_mass, 0),
+          comm_sptr(new Commxx)
+    {
+        std::ifstream in(filename);
+        in >> real_num;
+        in >> local_num;
+        total_num = local_num;
+        double gamma;
+        in >> gamma;
+        reference_particle.set_four_momentum(
+                    Four_momentum(proton_mass, gamma * proton_mass));
+        local_particles.resize(local_num, particle_size);
+
+        init_aview();
+
+        for (Eigen::Index part = 0; part < local_num; ++part) {
+            for (Eigen::Index index = 0; index < particle_size; ++ index) {
+                in >> local_particles(part, index);
+            }
         }
     }
 

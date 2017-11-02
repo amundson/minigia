@@ -16,6 +16,8 @@ public:
     {
     }
 
+    void set_four_momentum(Four_momentum const& four_momentum) { this->four_momentum = four_momentum; }
+
     double get_charge() const { return charge; }
 
     double get_mass() const { return four_momentum.get_mass(); }
