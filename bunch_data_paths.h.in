@@ -1,0 +1,6 @@
+#ifndef BUNCH_DATA_PATHS_H
+#define BUNCH_DATA_PATHS_H
+
+const char bunch_in_0_path = "${MINIGIA_SOURCE_DIR}/bunch_in_0.txt"
+
+#endif // BUNCH_DATA_PATHS_H

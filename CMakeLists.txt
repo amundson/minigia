@@ -12,6 +12,9 @@ find_package(Boost 1.41 REQUIRED)
 find_package(OpenMP)
 find_package(FFTW REQUIRED MPI)
 
+configure_file("${MINIGIA_SOURCE_DIR}/bunch_data_paths.h.in"
+    "${MINIGIA_BINARY_DIR}/bunch_data_paths.h" IMMEDIATE)
+
 add_executable(independent_particle
     independent_particle.cc
     bunch.h
