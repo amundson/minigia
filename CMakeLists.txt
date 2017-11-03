@@ -68,6 +68,7 @@ add_executable(space_charge_3d
     reference_particle.h
     restrict_extension.h
     )
+target_include_directories(space_charge_3d PRIVATE ${MINIGIA_BINARY_DIR})
 target_include_directories(space_charge_3d PRIVATE vectorclass)
 target_include_directories(space_charge_3d PRIVATE eigen)
 target_link_libraries(space_charge_3d PRIVATE MPI::MPI_CXX)

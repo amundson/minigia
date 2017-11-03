@@ -3,9 +3,13 @@
 #include <vector>
 
 #include <mpi.h>
+#if defined(_OPENMP)
+   #include <omp.h>
+#endif
 
 #include "bunch.h"
-#include "gsvector.h"
+#include "bunch_data_paths.h"
+#include "space_charge_3d_open_hockney.h"
 
 const int particles_per_rank = 100000;
 
@@ -73,7 +77,14 @@ run()
         exit(error);
     }
 
-    std::cout << "nothing here!\n";
+    Bunch bunch(bunch_in_0_path);
+    std::vector<int> grid_shape({32,32,128});
+    Commxx_divider_sptr commxx_divider_sptr(new Commxx_divider);
+    Space_charge_3d_open_hockney orig(commxx_divider_sptr, grid_shape);
+    double t0 = MPI_Wtime();
+    orig.apply(bunch, 1, 99);
+    double t1 = MPI_Wtime();
+    std::cout << "operation took " << t1 - t0 << "s\n";
 }
 
 int
