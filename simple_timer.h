@@ -9,20 +9,20 @@
 inline double
 simple_timer_current()
 {
-#ifdef USE_SIMPLE_TIMER
+#ifndef DO_NOT_USE_SIMPLE_TIMER
 #ifdef USE_SIMPLE_TIMER_BARRIER
     MPI_Barrier(MPI_COMM_WORLD);
 #endif // USE_SIMPLE_TIMER_BARRIER
     return MPI_Wtime();
 #else
     return 0.0;
-#endif // USE_SIMPLE_TIMER
+#endif // DO_NOT_USE_SIMPLE_TIMER
 }
 
 inline double
 simple_timer_show(double t0, const char * label)
 {
-#ifdef USE_SIMPLE_TIMER
+#ifndef DO_NOT_USE_SIMPLE_TIMER
 #ifdef USE_SIMPLE_TIMER_BARRIER
     MPI_Barrier(MPI_COMM_WORLD);
 #endif // USE_SIMPLE_TIMER_BARRIER
@@ -56,5 +56,5 @@ simple_timer_show(double t0, const char * label)
     return MPI_Wtime();
 #else
     return 0.0;
-#endif // USE_SIMPLE_TIMER
+#endif // DO_NOT_USE_SIMPLE_TIMER
 }

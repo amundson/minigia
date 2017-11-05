@@ -2,6 +2,7 @@
 #define SPACE_CHARGE_3D_OPEN_HOCKNEY_H_
 
 #include "bunch.h"
+#include "collective_operator.h"
 #include "rectangular_grid_domain.h"
 #include "rectangular_grid.h"
 #include "distributed_rectangular_grid.h"
@@ -11,7 +12,7 @@
 
 /// Note: internal grid is stored in [z][y][x] order, but
 /// grid shape expects [x][y][z] order.
-class Space_charge_3d_open_hockney
+class Space_charge_3d_open_hockney : public Collective_operator
 {
 private:
     std::vector<int > grid_shape, doubled_grid_shape, padded_grid_shape;
@@ -84,7 +85,7 @@ public:
     void
     apply_kick(Bunch & bunch, Rectangular_grid const& En, double delta_tau,
             int component);
-    void
+    virtual void
     apply(Bunch & bunch, double time_step, int verbosity);
     virtual
     ~Space_charge_3d_open_hockney();
