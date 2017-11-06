@@ -38,6 +38,8 @@ add_executable(space_charge_3d
     space_charge_3d.cc
     space_charge_3d_open_hockney.cc
     space_charge_3d_open_hockney.h
+    space_charge_3d_open_hockney_eigen.cc
+    space_charge_3d_open_hockney_eigen.h
     commxx.cc
     commxx.h
     commxx_divider.cc

@@ -1,4 +1,4 @@
-#include "space_charge_3d_open_hockney.h"
+#include "space_charge_3d_open_hockney_eigen.h"
 
 #include <stdexcept>
 #include <cstring>
@@ -14,7 +14,7 @@ using pconstants::epsilon0;
 #include "simple_timer.h"
 
 void
-Space_charge_3d_open_hockney::setup_communication(
+Space_charge_3d_open_hockney_eigen::setup_communication(
         Commxx_sptr const& bunch_comm_sptr)
 {
     if (comm2_sptr != commxx_divider_sptr->get_commxx_sptr(bunch_comm_sptr)) {
@@ -24,7 +24,7 @@ Space_charge_3d_open_hockney::setup_communication(
 }
 
 void
-Space_charge_3d_open_hockney::setup_derived_communication()
+Space_charge_3d_open_hockney_eigen::setup_derived_communication()
 {
     distributed_fft3d_sptr = Distributed_fft3d_sptr(
             new Distributed_fft3d(doubled_grid_shape, comm2_sptr));
@@ -81,7 +81,7 @@ Space_charge_3d_open_hockney::setup_derived_communication()
 }
 
 void
-Space_charge_3d_open_hockney::constructor_common(
+Space_charge_3d_open_hockney_eigen::constructor_common(
         std::vector<int > const& grid_shape)
 {
     this->grid_shape[0] = grid_shape[2];
@@ -92,7 +92,7 @@ Space_charge_3d_open_hockney::constructor_common(
     }
 }
 
-Space_charge_3d_open_hockney::Space_charge_3d_open_hockney(
+Space_charge_3d_open_hockney_eigen::Space_charge_3d_open_hockney_eigen(
         Commxx_divider_sptr commxx_divider_sptr,
         std::vector<int > const & grid_shape,
         double n_sigma) :
@@ -110,13 +110,13 @@ Space_charge_3d_open_hockney::Space_charge_3d_open_hockney(
 }
 
 double
-Space_charge_3d_open_hockney::get_n_sigma() const
+Space_charge_3d_open_hockney_eigen::get_n_sigma() const
 {
     return n_sigma;
 }
 
 void
-Space_charge_3d_open_hockney::set_doubled_domain()
+Space_charge_3d_open_hockney_eigen::set_doubled_domain()
 {
     std::vector<double > doubled_size(3);
     for (int i = 0; i < 3; ++i) {
@@ -128,7 +128,7 @@ Space_charge_3d_open_hockney::set_doubled_domain()
                     false));
 }
 
-namespace {
+namespace{
 double
 get_smallest_non_tiny(double val, double other1, double other2, double tiny)
 {
@@ -144,10 +144,10 @@ get_smallest_non_tiny(double val, double other1, double other2, double tiny)
     }
     return retval;
 }
-} // namespace
+}
 
 void
-Space_charge_3d_open_hockney::update_domain(Bunch const& bunch)
+Space_charge_3d_open_hockney_eigen::update_domain(Bunch const& bunch)
 {
     setup_communication(bunch.get_comm_sptr());
     if (!domain_fixed) {
@@ -159,7 +159,7 @@ Space_charge_3d_open_hockney::update_domain(Bunch const& bunch)
         if ((std[Bunch::x] < tiny) && (std[Bunch::y] < tiny)
                 && (std[Bunch::z] < tiny)) {
             throw std::runtime_error(
-                    "Space_charge_3d_open_hockney::update_domain: all three spatial dimensions have neglible extent");
+                    "Space_charge_3d_open_hockney_eigen::update_domain: all three spatial dimensions have neglible extent");
         }
         offset[0] = mean[Bunch::z];
         size[0] = n_sigma
@@ -182,7 +182,7 @@ Space_charge_3d_open_hockney::update_domain(Bunch const& bunch)
 }
 
 Rectangular_grid_sptr
-Space_charge_3d_open_hockney::get_local_charge_density(Bunch const& bunch)
+Space_charge_3d_open_hockney_eigen::get_local_charge_density(Bunch const& bunch)
 {
 double t = simple_timer_current();
     update_domain(bunch);
@@ -198,7 +198,7 @@ t = simple_timer_show(t, "sc-local-rho-deposit");
 
 
 Distributed_rectangular_grid_sptr
-Space_charge_3d_open_hockney::get_global_charge_density2_allreduce(
+Space_charge_3d_open_hockney_eigen::get_global_charge_density2_allreduce(
         Rectangular_grid const& local_charge_density, Commxx_sptr comm_sptr)
 {
     setup_communication(comm_sptr);
@@ -208,7 +208,7 @@ Space_charge_3d_open_hockney::get_global_charge_density2_allreduce(
             MPI_SUM, comm_sptr->get());
     if (error != MPI_SUCCESS) {
         throw std::runtime_error(
-                "MPI error in Space_charge_3d_open_hockney::get_global_charge_density2_allreduce");
+                "MPI error in Space_charge_3d_open_hockney_eigen::get_global_charge_density2_allreduce");
     }
     Distributed_rectangular_grid_sptr rho2 = Distributed_rectangular_grid_sptr(
             new Distributed_rectangular_grid(doubled_domain_sptr, doubled_lower,
@@ -234,7 +234,7 @@ Space_charge_3d_open_hockney::get_global_charge_density2_allreduce(
 }
 
 Distributed_rectangular_grid_sptr
-Space_charge_3d_open_hockney::get_global_charge_density2(
+Space_charge_3d_open_hockney_eigen::get_global_charge_density2(
         Rectangular_grid const& local_charge_density, Commxx_sptr comm_sptr)
 {
     return get_global_charge_density2_allreduce(local_charge_density,
@@ -242,11 +242,11 @@ Space_charge_3d_open_hockney::get_global_charge_density2(
 }
 
 Distributed_rectangular_grid_sptr
-Space_charge_3d_open_hockney::get_green_fn2_pointlike()
+Space_charge_3d_open_hockney_eigen::get_green_fn2_pointlike()
 {
     if (doubled_domain_sptr == NULL) {
         throw std::runtime_error(
-                "Space_charge_3d_open_hockney::get_green_fn2_pointlike called before domain specified");
+                "Space_charge_3d_open_hockney_eigen::get_green_fn2_pointlike called before domain specified");
     }
     int lower = distributed_fft3d_sptr->get_lower();
     int upper = distributed_fft3d_sptr->get_upper();
@@ -269,7 +269,7 @@ Space_charge_3d_open_hockney::get_green_fn2_pointlike()
 //    G000 = coeff/min(hx,hy,hz),
 // with
 //    coeff > 1
-// satisfies the criterion. An empirical study (see the 3d_open_hockney.py
+// satisfies the criterion. An empirical study (see the 3d_open_hockney_eigen.py
 // script in docs/devel/solvers) gives coeff = 2.8.
     const double coeff = 2.8;
     double G000 = coeff / std::min(hx, std::min(hy, hz));
@@ -324,7 +324,7 @@ Space_charge_3d_open_hockney::get_green_fn2_pointlike()
 }
 
 Distributed_rectangular_grid_sptr
-Space_charge_3d_open_hockney::get_scalar_field2(
+Space_charge_3d_open_hockney_eigen::get_scalar_field2(
         Distributed_rectangular_grid & charge_density2,
         Distributed_rectangular_grid & green_fn2)
 {
@@ -374,7 +374,7 @@ Space_charge_3d_open_hockney::get_scalar_field2(
 }
 
 Distributed_rectangular_grid_sptr
-Space_charge_3d_open_hockney::extract_scalar_field(
+Space_charge_3d_open_hockney_eigen::extract_scalar_field(
         Distributed_rectangular_grid const & phi2)
 {
     Distributed_rectangular_grid_sptr phi(
@@ -398,7 +398,7 @@ Space_charge_3d_open_hockney::extract_scalar_field(
 }
 
 Distributed_rectangular_grid_sptr
-Space_charge_3d_open_hockney::get_electric_field_component(
+Space_charge_3d_open_hockney_eigen::get_electric_field_component(
         Distributed_rectangular_grid const& phi, int component)
 {
     int index;
@@ -410,7 +410,7 @@ Space_charge_3d_open_hockney::get_electric_field_component(
         index = 0;
     } else {
         throw std::runtime_error(
-                "Space_charge_3d_open_hockney::get_electric_field_component: component must be 0, 1 or 2");
+                "Space_charge_3d_open_hockney_eigen::get_electric_field_component: component must be 0, 1 or 2");
     }
 
     Distributed_rectangular_grid_sptr En(
@@ -465,7 +465,7 @@ Space_charge_3d_open_hockney::get_electric_field_component(
 }
 
 Rectangular_grid_sptr
-Space_charge_3d_open_hockney::get_global_electric_field_component_allreduce(
+Space_charge_3d_open_hockney_eigen::get_global_electric_field_component_allreduce(
         Distributed_rectangular_grid const& dist_field)
 {
     Rectangular_grid_sptr global_field(new Rectangular_grid(domain_sptr));
@@ -490,21 +490,21 @@ Space_charge_3d_open_hockney::get_global_electric_field_component_allreduce(
             comm2_sptr->get());
     if (error != MPI_SUCCESS) {
         throw std::runtime_error(
-                "MPI error in Space_charge_3d_open_hockney(MPI_Allreduce in get_global_electric_field_component_allreduce)");
+                "MPI error in Space_charge_3d_open_hockney_eigen(MPI_Allreduce in get_global_electric_field_component_allreduce)");
     }
     global_field->set_normalization(dist_field.get_normalization());
     return global_field;
 }
 
 Rectangular_grid_sptr
-Space_charge_3d_open_hockney::get_global_electric_field_component(
+Space_charge_3d_open_hockney_eigen::get_global_electric_field_component(
         Distributed_rectangular_grid const& dist_field)
 {
      return get_global_electric_field_component_allreduce(dist_field);
 }
 
 void
-Space_charge_3d_open_hockney::apply_kick(Bunch & bunch,
+Space_charge_3d_open_hockney_eigen::apply_kick(Bunch & bunch,
         Rectangular_grid const& En, double delta_t, int component)
 {
 // $\delta \vec{p} = \vec{F} \delta t = q \vec{E} \delta t$
@@ -534,7 +534,7 @@ Space_charge_3d_open_hockney::apply_kick(Bunch & bunch,
 }
 
 void
-Space_charge_3d_open_hockney::apply(Bunch & bunch, double time_step,
+Space_charge_3d_open_hockney_eigen::apply(Bunch & bunch, double time_step,
         int verbosity)
 {
     double t = simple_timer_current();
@@ -575,6 +575,6 @@ Space_charge_3d_open_hockney::apply(Bunch & bunch, double time_step,
     }
 }
 
-Space_charge_3d_open_hockney::~Space_charge_3d_open_hockney()
+Space_charge_3d_open_hockney_eigen::~Space_charge_3d_open_hockney_eigen()
 {
 }
