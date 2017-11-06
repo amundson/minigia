@@ -6,6 +6,8 @@
 #include <string>
 #endif // USE_SIMPLE_TIMER_MEM
 
+extern std::ofstream global_simple_timer_out;
+
 inline double
 simple_timer_current()
 {
@@ -30,11 +32,11 @@ simple_timer_show(double t0, const char * label)
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     if (rank == 0) {
-        std::ios_base::fmtflags old_flags(std::cout.flags());
-        std::cout << "simple_timer:" << label << ":";
-        std::cout << std::scientific << std::setprecision(8);
-        std::cout << (t1-t0) << std::endl;
-        std::cout.flags(old_flags);
+        std::ios_base::fmtflags old_flags(global_simple_timer_out.flags());
+        global_simple_timer_out << "simple_timer:" << label << ":";
+        global_simple_timer_out << std::scientific << std::setprecision(8);
+        global_simple_timer_out << (t1-t0) << std::endl;
+        global_simple_timer_out.flags(old_flags);
     }
 #ifdef USE_SIMPLE_TIMER_MEM
     // the order of fields in this file is vmsize, vmrss, "shared", "code",
@@ -50,7 +52,7 @@ simple_timer_show(double t0, const char * label)
     statm >> vmstk; // data-stack
     statm.close();
     if (rank == 0) {
-	std::cout << "simple_timer_mem:" << label << ":" << vmsize << ":" << vmrss << ":" << vmstk << std::endl;
+    global_simple_timer_out << "simple_timer_mem:" << label << ":" << vmsize << ":" << vmrss << ":" << vmstk << std::endl;
     }
 #endif // USE_SIMPLE_TIMER_MEM
     return MPI_Wtime();

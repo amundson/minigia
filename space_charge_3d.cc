@@ -88,6 +88,8 @@ run()
     do_timing(orig, bunch, time_step, verbosity, "orig", reference_timing);
 }
 
+std::ofstream global_simple_timer_out("simple_timer.out");
+
 int
 main(int argc, char** argv)
 {
