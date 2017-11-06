@@ -186,13 +186,13 @@ Space_charge_3d_open_hockney_eigen::get_local_charge_density(Bunch const& bunch)
 {
 double t = simple_timer_current();
     update_domain(bunch);
-t = simple_timer_show(t, "sc-local-rho-update-domain");
+t = simple_timer_show(t, "sce-local-rho-update-domain");
     Rectangular_grid_sptr local_rho_sptr(new Rectangular_grid(domain_sptr));
-t = simple_timer_show(t, "sc-local-rho-new");
+t = simple_timer_show(t, "sce-local-rho-new");
     deposit_charge_rectangular_zyx(*local_rho_sptr, bunch);
     //deposit_charge_rectangular_zyx_omp_reduce(*local_rho_sptr, bunch);
     //deposit_charge_rectangular_zyx_omp_interleaved(*local_rho_sptr, bunch);
-t = simple_timer_show(t, "sc-local-rho-deposit");
+t = simple_timer_show(t, "sce-local-rho-deposit");
     return local_rho_sptr;
 }
 
@@ -540,38 +540,38 @@ Space_charge_3d_open_hockney_eigen::apply(Bunch & bunch, double time_step,
     double t = simple_timer_current();
     setup_communication(bunch.get_comm_sptr());
     int comm_compare;
-    t = simple_timer_show(t, "sc-setup-communication");
+    t = simple_timer_show(t, "sce-setup-communication");
 //    bunch.convert_to_state(Bunch::fixed_t_bunch);
-    t = simple_timer_show(t, "sc-convert-to-state");
+    t = simple_timer_show(t, "sce-convert-to-state");
     Rectangular_grid_sptr local_rho(get_local_charge_density(bunch)); // [C/m^3]
-    t = simple_timer_show(t, "sc-get-local-rho");
+    t = simple_timer_show(t, "sce-get-local-rho");
     Distributed_rectangular_grid_sptr rho2(
             get_global_charge_density2(*local_rho, bunch.get_comm_sptr())); // [C/m^3]
-    t = simple_timer_show(t, "sc-get-global-rho");
+    t = simple_timer_show(t, "sce-get-global-rho");
     local_rho.reset();
     Distributed_rectangular_grid_sptr G2; // [1/m]
     G2 = get_green_fn2_pointlike();
-    t = simple_timer_show(t, "sc-get-green-fn");
+    t = simple_timer_show(t, "sce-get-green-fn");
     Distributed_rectangular_grid_sptr phi2(get_scalar_field2(*rho2, *G2)); // [V]
-    t = simple_timer_show(t, "sc-get-phi2");
+    t = simple_timer_show(t, "sce-get-phi2");
     rho2.reset();
     G2.reset();
     Distributed_rectangular_grid_sptr phi(extract_scalar_field(*phi2));
-    t = simple_timer_show(t, "sc-get-phi");
+    t = simple_timer_show(t, "sce-get-phi");
 //    bunch.periodic_sort(Bunch::z);
-    t = simple_timer_show(t, "sc-sort");
+    t = simple_timer_show(t, "sce-sort");
     phi2.reset();
     int max_component;
     max_component = 2;
     for (int component = 0; component < max_component; ++component) {
         Distributed_rectangular_grid_sptr local_En(
                 get_electric_field_component(*phi, component)); // [V/m]
-        t = simple_timer_show(t, "sc-get-local-en");
+        t = simple_timer_show(t, "sce-get-local-en");
         Rectangular_grid_sptr En(
                 get_global_electric_field_component(*local_En)); // [V/m]
-        t = simple_timer_show(t, "sc-get-global-en");
+        t = simple_timer_show(t, "sce-get-global-en");
         apply_kick(bunch, *En, time_step, component);
-        t = simple_timer_show(t, "sc-apply-kick");
+        t = simple_timer_show(t, "sce-apply-kick");
     }
 }
 

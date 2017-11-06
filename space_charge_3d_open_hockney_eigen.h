@@ -1,5 +1,5 @@
-#ifndef SPACE_CHARGE_3D_OPEN_HOCKNEY_H_
-#define SPACE_CHARGE_3D_OPEN_HOCKNEY_H_
+#ifndef SPACE_CHARGE_3D_OPEN_HOCKNEY_EIGEN_H_
+#define SPACE_CHARGE_3D_OPEN_HOCKNEY_EIGEN_H_
 
 #include "bunch.h"
 #include "collective_operator.h"
@@ -91,4 +91,4 @@ public:
     ~Space_charge_3d_open_hockney_eigen();
 };
 
-#endif /* SPACE_CHARGE_3D_OPEN_HOCKNEY_H_ */
+#endif /* SPACE_CHARGE_3D_OPEN_HOCKNEY_EIGEN_H_ */

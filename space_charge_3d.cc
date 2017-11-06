@@ -9,7 +9,9 @@
 
 #include "bunch.h"
 #include "bunch_data_paths.h"
+#include "simple_timer.h"
 #include "space_charge_3d_open_hockney.h"
+#include "space_charge_3d_open_hockney_eigen.h"
 
 const int particles_per_rank = 100000;
 
@@ -86,6 +88,10 @@ run()
 
     run_check(orig, orig, time_step, verbosity, "orig");
     do_timing(orig, bunch, time_step, verbosity, "orig", reference_timing);
+
+    Space_charge_3d_open_hockney_eigen eigen(commxx_divider_sptr, grid_shape);
+    run_check(eigen, eigen, time_step, verbosity, "eigen");
+    do_timing(eigen, bunch, time_step, verbosity, "eigen", reference_timing);
 }
 
 std::ofstream global_simple_timer_out("simple_timer.out");
