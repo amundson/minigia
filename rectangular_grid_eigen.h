@@ -8,14 +8,10 @@ class Rectangular_grid_eigen
 {
 public:
     typedef Eigen::Tensor<double, 3> Grid_points_t;
-    typedef Eigen::MatrixXcd Grid_points_2dc_t;
-    typedef Eigen::VectorXd Grid_points_1d_t;
 
 private:
     Rectangular_grid_domain_eigen domain;
     Grid_points_t grid_points;
-    Grid_points_2dc_t grid_points_2dc;
-    Grid_points_1d_t grid_points_1d;
     double normalization;
 
 public:
@@ -25,8 +21,6 @@ public:
                            bool periodic_z)
         : domain(physical_size, physical_offset, grid_shape, periodic_z)
         , grid_points(grid_shape[0], grid_shape[1], grid_shape[2])
-        , grid_points_2dc(grid_shape[0], grid_shape[1])
-        , grid_points_1d(grid_shape[2])
         , normalization(1.0)
     {}
 
@@ -35,9 +29,6 @@ public:
         : domain(rectangular_grid_domain_eigen)
         , grid_points(domain.get_grid_shape()[0], domain.get_grid_shape()[1],
                       domain.get_grid_shape()[2])
-        , grid_points_2dc(domain.get_grid_shape()[0],
-                          domain.get_grid_shape()[1])
-        , grid_points_1d(domain.get_grid_shape()[2])
         , normalization(1.0)
     {}
 
@@ -48,20 +39,6 @@ public:
     Grid_points_t const& get_grid_points() const { return grid_points; }
 
     Grid_points_t& get_grid_points() { return grid_points; }
-
-    Grid_points_2dc_t const& get_grid_points_2dc() const
-    {
-        return grid_points_2dc;
-    }
-
-    Grid_points_2dc_t& get_grid_points_2dc() { return grid_points_2dc; }
-
-    Grid_points_1d_t const& get_grid_points_1d() const
-    {
-        return grid_points_1d;
-    }
-
-    Grid_points_1d_t& get_grid_points_1d() { return grid_points_1d; }
 
     void set_normalization(double val) { normalization = val; }
 
