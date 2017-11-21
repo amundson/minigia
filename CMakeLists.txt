@@ -52,13 +52,18 @@ add_executable(space_charge_3d
     distributed_fft3d.h
     distributed_rectangular_grid.cc
     distributed_rectangular_grid.h
+    distributed_rectangular_grid_eigen.cc
+    distributed_rectangular_grid_eigen.h
     interpolate_rectangular_zyx.h
     math_constants.h
     multi_array_offsets.h
     rectangular_grid.cc
     rectangular_grid.h
+    rectangular_grid_eigen.h
     rectangular_grid_domain.cc
     rectangular_grid_domain.h
+    rectangular_grid_domain_eigen.cc
+    rectangular_grid_domain_eigen.h
     simple_timer.h
     space_charge_3d.cc
     space_charge_3d_open_hockney.cc
@@ -75,3 +80,5 @@ target_include_directories(space_charge_3d PRIVATE vectorclass)
 target_include_directories(space_charge_3d PRIVATE eigen)
 target_link_libraries(space_charge_3d PRIVATE MPI::MPI_CXX)
 target_link_libraries(space_charge_3d PRIVATE ${FFTW_LIBRARIES})
+
+add_subdirectory(tests)
