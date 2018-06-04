@@ -4,7 +4,7 @@ set(CMAKE_CXX_STANDARD 11)
 list(APPEND CMAKE_MODULE_PATH "${MINIGIA_SOURCE_DIR}/CMake")
 
 if(DEFINES)
-    add_definitions(${DEFINES})
+  add_definitions(${DEFINES})
 endif()
 
 find_package(MPI REQUIRED CXX)
@@ -13,68 +13,66 @@ find_package(OpenMP)
 find_package(FFTW REQUIRED MPI)
 
 configure_file("${MINIGIA_SOURCE_DIR}/bunch_data_paths.h.in"
-    "${MINIGIA_BINARY_DIR}/bunch_data_paths.h" IMMEDIATE)
+               "${MINIGIA_BINARY_DIR}/bunch_data_paths.h" IMMEDIATE)
 
 add_executable(independent_particle
-    independent_particle.cc
-    bunch.h
-    commxx.cc
-    commxx.h
-    four_momentum.h
-    gsvector.h
-    multi_array_typedefs.h
-    reference_particle.h
-    restrict_extension.h
-    )
+               independent_particle.cc
+               bunch.h
+               commxx.cc
+               commxx.h
+               four_momentum.h
+               gsvector.h
+               multi_array_typedefs.h
+               reference_particle.h
+               restrict_extension.h)
 target_include_directories(independent_particle PRIVATE ${MINIGIA_BINARY_DIR})
 target_include_directories(independent_particle PRIVATE vectorclass)
 target_include_directories(independent_particle PRIVATE eigen)
 target_link_libraries(independent_particle PRIVATE MPI::MPI_CXX)
 if(OpenMP_CXX_FOUND)
-    target_link_libraries(independent_particle PRIVATE OpenMP::OpenMP_CXX)
+  target_link_libraries(independent_particle PRIVATE OpenMP::OpenMP_CXX)
 endif()
 
 add_executable(space_charge_3d
-    space_charge_3d.cc
-    space_charge_3d_open_hockney.cc
-    space_charge_3d_open_hockney.h
-    space_charge_3d_open_hockney_eigen.cc
-    space_charge_3d_open_hockney_eigen.h
-    commxx.cc
-    commxx.h
-    commxx_divider.cc
-    commxx_divider.h
-    core_diagnostics.cc
-    core_diagnostics.h
-    deposit.cc
-    deposit.h
-    distributed_fft3d.cc
-    distributed_fft3d.h
-    distributed_rectangular_grid.cc
-    distributed_rectangular_grid.h
-    distributed_rectangular_grid_eigen.cc
-    distributed_rectangular_grid_eigen.h
-    interpolate_rectangular_zyx.h
-    math_constants.h
-    multi_array_offsets.h
-    rectangular_grid.cc
-    rectangular_grid.h
-    rectangular_grid_eigen.h
-    rectangular_grid_domain.cc
-    rectangular_grid_domain.h
-    rectangular_grid_domain_eigen.cc
-    rectangular_grid_domain_eigen.h
-    simple_timer.h
-    space_charge_3d.cc
-    space_charge_3d_open_hockney.cc
-    bunch.h
-    four_momentum.h
-    gsvector.h
-    multi_array_typedefs.h
-    physical_constants.h
-    reference_particle.h
-    restrict_extension.h
-    )
+               space_charge_3d.cc
+               space_charge_3d_open_hockney.cc
+               space_charge_3d_open_hockney.h
+               space_charge_3d_open_hockney_eigen.cc
+               space_charge_3d_open_hockney_eigen.h
+               commxx.cc
+               commxx.h
+               commxx_divider.cc
+               commxx_divider.h
+               core_diagnostics.cc
+               core_diagnostics.h
+               deposit.cc
+               deposit.h
+               distributed_fft3d.cc
+               distributed_fft3d.h
+               distributed_rectangular_grid.cc
+               distributed_rectangular_grid.h
+               distributed_rectangular_grid_eigen.cc
+               distributed_rectangular_grid_eigen.h
+               interpolate_rectangular_zyx.h
+               math_constants.h
+               multi_array_offsets.h
+               rectangular_grid.cc
+               rectangular_grid.h
+               rectangular_grid_eigen.h
+               rectangular_grid_domain.cc
+               rectangular_grid_domain.h
+               rectangular_grid_domain_eigen.cc
+               rectangular_grid_domain_eigen.h
+               simple_timer.h
+               space_charge_3d.cc
+               space_charge_3d_open_hockney.cc
+               bunch.h
+               four_momentum.h
+               gsvector.h
+               multi_array_typedefs.h
+               physical_constants.h
+               reference_particle.h
+               restrict_extension.h)
 target_include_directories(space_charge_3d PRIVATE ${MINIGIA_BINARY_DIR})
 target_include_directories(space_charge_3d PRIVATE vectorclass)
 target_include_directories(space_charge_3d PRIVATE eigen)
