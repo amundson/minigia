@@ -33,6 +33,18 @@ if(OpenMP_CXX_FOUND)
   target_link_libraries(independent_particle PRIVATE OpenMP::OpenMP_CXX)
 endif()
 
+add_executable(populate
+    populate.cc
+    bunch.h
+    commxx.h
+    commxx.cc)
+target_include_directories(populate PRIVATE ${MINIGIA_BINARY_DIR})
+target_include_directories(populate PRIVATE eigen)
+target_link_libraries(populate PRIVATE MPI::MPI_CXX)
+if(OpenMP_CXX_FOUND)
+  target_link_libraries(populate PRIVATE OpenMP::OpenMP_CXX)
+endif()
+
 add_executable(space_charge_3d
                space_charge_3d.cc
                space_charge_3d_open_hockney.cc

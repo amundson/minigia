@@ -1,13 +1,14 @@
 #ifndef BUNCH_H_
 #define BUNCH_H_
 
-#include <iostream>
-#include <fstream>
-#include <Eigen/Dense>
+#include "commxx.h"
 #include "multi_array_typedefs.h"
 #include "reference_particle.h"
-#include "commxx.h"
 #include "restrict_extension.h"
+#include <Eigen/Dense>
+#include <fstream>
+#include <iostream>
+#include <iomanip>
 
 //  J. Beringer et al. (Particle Data Group), PR D86, 010001 (2012) and 2013
 //  partial update for the 2014 edition (URL: http://pdg.lbl.gov)
@@ -64,12 +65,13 @@ private:
 public:
     Bunch(long total_num, double real_num, int mpi_size, int mpi_rank)
         : reference_particle(proton_charge, proton_mass,
-                             example_gamma * proton_mass),
-          local_num(total_num / mpi_size), // jfa FIXME!
-          total_num(total_num),
-          real_num(real_num),
-          local_particles(local_num, particle_size_workaround),
-          comm_sptr(new Commxx)
+                             example_gamma * proton_mass)
+        , local_num(total_num / mpi_size)
+        , // jfa FIXME!
+        total_num(total_num)
+        , real_num(real_num)
+        , local_particles(local_num, particle_size_workaround)
+        , comm_sptr(new Commxx)
     {
         init_aview();
         for (Eigen::Index part = 0; part < local_num; ++part) {
@@ -84,9 +86,9 @@ public:
         }
     }
 
-    Bunch(const char * filename)
-        : reference_particle(proton_charge, proton_mass, proton_mass),
-          comm_sptr(new Commxx)
+    Bunch(const char* filename)
+        : reference_particle(proton_charge, proton_mass, proton_mass)
+        , comm_sptr(new Commxx)
     {
         std::ifstream in(filename);
         in >> real_num;
@@ -95,13 +97,13 @@ public:
         double gamma;
         in >> gamma;
         reference_particle.set_four_momentum(
-                    Four_momentum(proton_mass, gamma * proton_mass));
+            Four_momentum(proton_mass, gamma * proton_mass));
         local_particles.resize(local_num, particle_size);
 
         init_aview();
 
         for (Eigen::Index part = 0; part < local_num; ++part) {
-            for (Eigen::Index index = 0; index < particle_size; ++ index) {
+            for (Eigen::Index index = 0; index < particle_size; ++index) {
                 in >> local_particles(part, index);
             }
         }
@@ -112,7 +114,7 @@ public:
         return reference_particle;
     }
 
-    Particles & get_local_particles() { return local_particles; }
+    Particles& get_local_particles() { return local_particles; }
 
     Particles const& get_local_particles() const { return local_particles; }
 
@@ -140,9 +142,35 @@ public:
 
     AView get_aview() { return aview; }
 
-    virtual ~Bunch()
+    void write(const char* filename)
     {
+        std::ofstream out(filename);
+        out << std::setprecision(17);
+        out << real_num << std::endl;
+        out << local_num << std::endl;
+        out << reference_particle.get_gamma() << std::endl;
+
+        for (Eigen::Index part = 0; part < local_num; ++part) {
+            for (Eigen::Index index = 0; index < particle_size; ++index) {
+                out << local_particles(part, index) << " ";
+            }
+        }
     }
+
+    void write_particle_matrix(const char* filename)
+    {
+        std::ofstream out(filename);
+        out << std::setprecision(17);
+
+        for (Eigen::Index part = 0; part < local_num; ++part) {
+            for (Eigen::Index index = 0; index < particle_size; ++index) {
+                out << local_particles(part, index) << " ";
+            }
+            out << std::endl;
+        }
+    }
+
+    virtual ~Bunch() {}
 };
 
 inline bool
@@ -157,12 +185,12 @@ floating_point_equal(double a, double b, double tolerance)
 
 inline bool
 eigen_check_equal(Bunch::Particles const& a, Bunch::Particles const& b,
-                        double tolerance)
+                  double tolerance)
 {
-//    return a.isApprox(b, tolerance);
+    //    return a.isApprox(b, tolerance);
     for (Eigen::Index i = 0; i < a.rows(); ++i) {
         for (Eigen::Index j = 0; j < a.cols(); j++) {
-            if (!floating_point_equal(a(i, j), b(i,j), tolerance)) {
+            if (!floating_point_equal(a(i, j), b(i, j), tolerance)) {
                 std::cerr << "eigen_check_equal:\n";
                 std::cerr << "  a(" << i << "," << j << ") = " << a(i, j)
                           << std::endl;
@@ -187,8 +215,8 @@ check_equal(Bunch& b1, Bunch& b2, double tolerance)
                   << std::endl;
         return false;
     }
-    return eigen_check_equal(b1.get_local_particles(),
-                             b2.get_local_particles(), tolerance);
+    return eigen_check_equal(b1.get_local_particles(), b2.get_local_particles(),
+                             tolerance);
 }
 
 #endif /* BUNCH_H_ */
