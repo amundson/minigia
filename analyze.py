@@ -11,6 +11,7 @@ for i in range(0,6):
 
 print('corr = \n', np.corrcoef(p[:,0:6], rowvar=False))
 
+plt.plot(p[:,0], p[:,1], '.')
 #plt.hist(p[:,0],20)
-#plt.show()
+plt.show()
 
