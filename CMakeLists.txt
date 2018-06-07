@@ -38,7 +38,7 @@ add_executable(populate
     bunch.h
     commxx.h
     commxx.cc
-    sobol.cc)
+    sobol.cpp)
 target_include_directories(populate PRIVATE ${MINIGIA_BINARY_DIR})
 target_include_directories(populate PRIVATE eigen)
 target_link_libraries(populate PRIVATE MPI::MPI_CXX)

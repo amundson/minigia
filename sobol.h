@@ -55,6 +55,28 @@ inline double sample(
     return result * (1.0 / (1ULL << Matrices::size));
 }
 
+inline unsigned long long sample_integer(
+    unsigned long long index,
+    const unsigned dimension,
+    const unsigned long long scramble = 0ULL)
+{
+    assert(dimension < Matrices::num_dimensions);
+
+    unsigned long long result = scramble & ~-(1ULL << Matrices::size);
+    for (unsigned i = dimension * Matrices::size; index; index >>= 1, ++i)
+    {
+        if (index & 1)
+            result ^= Matrices::matrices[i];
+    }
+
+    return result;
+}
+
+inline double sample_integer_max()
+{
+    return 1ULL << Matrices::size;
+}
+
 } // namespace sobol
 
 #endif
