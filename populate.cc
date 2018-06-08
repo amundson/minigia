@@ -1,4 +1,5 @@
 #include "bunch.h"
+#include "pcg/pcg_random.hpp"
 #include "sobol.h"
 #include <array>
 #include <chrono>
@@ -6,7 +7,8 @@
 #include <iostream>
 #include <random>
 
-const long total_num = 1000;
+const long total_num = 100000;
+const long total_skip = 1000000;
 const double real_num = 1.0e12;
 
 class Sobol_uniform_distribution
@@ -70,9 +72,25 @@ public:
     }
 };
 
+class Timer
+{
+private:
+    std::chrono::high_resolution_clock::time_point startt, endt;
+
+public:
+    void start() { startt = std::chrono::high_resolution_clock::now(); }
+    void end() { endt = std::chrono::high_resolution_clock::now(); }
+    void show(const char* label)
+    {
+        std::chrono::duration<double> elapsed_seconds = endt - startt;
+        std::cout << label << ": " << elapsed_seconds.count() << " seconds\n";
+    }
+};
+
 int
 main()
 {
+    Timer timer;
     Bunch bunch(total_num, real_num, 1, 0);
 
     Bunch::Particles& particles(bunch.get_local_particles());
@@ -81,26 +99,52 @@ main()
     std::seed_seq seed{ 11, 13, 17, 19, 23 };
     std::normal_distribution<double> distribution(0.0, 1.0);
 //    std::uniform_real_distribution<double> distribution(0.0, 1.0);
-#if 0
-    std::mt19937 generator(seed);
+#if 1
+    pcg64 generator(seed);
+    timer.start();
     for (Eigen::Index part = 0; part < local_num; ++part) {
         for (Eigen::Index index = 0; index < 6; ++index) {
             particles(part, index) = distribution(generator);
         }
         particles(part, 6) = part;
     }
-#endif
-#if 1
-    Sobol_normal_distribution generator(0.0, 1.0);
-    //    Sobol_uniform_distribution generator(0.0, 1.0);
+    timer.end();
+    timer.show("pcg");
+    timer.start();
+    generator.discard(total_skip * 6);
+    timer.end();
+    timer.show("pcg discard");
+
+    std::mt19937 generatorm(seed);
+    timer.start();
     for (Eigen::Index part = 0; part < local_num; ++part) {
         for (Eigen::Index index = 0; index < 6; ++index) {
-            particles(part, index) = generator(index, part);
+            particles(part, index) = distribution(generatorm);
         }
         particles(part, 6) = part;
     }
+    timer.end();
+    timer.show("mt19937");
+    timer.start();
+    generator.discard(total_skip * 6);
+    timer.end();
+    timer.show("mt19987 discard");
+
 #endif
 #if 1
+    Sobol_normal_distribution sgenerator(0.0, 1.0);
+    //    Sobol_uniform_distribution sgenerator(0.0, 1.0);
+    timer.start();
+    for (Eigen::Index part = 0; part < local_num; ++part) {
+        for (Eigen::Index index = 0; index < 6; ++index) {
+            particles(part, index) = sgenerator(index, part);
+        }
+        particles(part, 6) = part;
+    }
+    timer.end();
+    timer.show("sobol");
+#endif
+#if 0
     auto particles6(particles.block(0, 0, local_num, 6));
     particles6.rowwise() -= particles6.colwise().mean();
     auto X((particles6.adjoint() * particles6) / particles6.rows());
