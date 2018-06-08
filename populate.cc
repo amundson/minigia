@@ -9,13 +9,13 @@
 const long total_num = 1000;
 const double real_num = 1.0e12;
 
-class Sobol_uniform
+class Sobol_uniform_distribution
 {
 private:
     double scale, offset;
 
 public:
-    Sobol_uniform(double min = 0.0, double max = 1.0)
+    Sobol_uniform_distribution(double min = 0.0, double max = 1.0)
         : scale(max - min)
         , offset(min)
     {}
@@ -25,7 +25,7 @@ public:
     }
 };
 
-class Sobol_normal
+class Sobol_normal_distribution
 {
 private:
     double mu, sigma;
@@ -35,7 +35,7 @@ private:
     bool cached;
 
 public:
-    Sobol_normal(double mu = 0.0, double sigma = 1.0)
+    Sobol_normal_distribution(double mu = 0.0, double sigma = 1.0)
         : mu(mu)
         , sigma(sigma)
         , last_even(0.0)
@@ -91,8 +91,8 @@ main()
     }
 #endif
 #if 1
-    //    Sobol_normal generator(0.0, 1.0);
-    Sobol_uniform generator(0.0, 1.0);
+    //    Sobol_normal_distribution generator(0.0, 1.0);
+    Sobol_uniform_distribution generator(0.0, 1.0);
     for (Eigen::Index part = 0; part < local_num; ++part) {
         for (Eigen::Index index = 0; index < 6; ++index) {
             particles(part, index) = generator(index, part);
