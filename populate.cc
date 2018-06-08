@@ -6,19 +6,20 @@
 #include <iostream>
 #include <random>
 
+const long total_num = 1000;
+const double real_num = 1.0e12;
+
 class Sobol_uniform
 {
 private:
-    unsigned dimension;
     double scale, offset;
 
 public:
-    Sobol_uniform(unsigned dimension, double min = 0.0, double max = 1.0)
-        : dimension(dimension)
-        , scale(max - min)
+    Sobol_uniform(double min = 0.0, double max = 1.0)
+        : scale(max - min)
         , offset(min)
     {}
-    inline double operator()(unsigned long long index)
+    inline double operator()(unsigned dimension, unsigned long long index)
     {
         return scale * sobol::sample(index, dimension) + offset;
     }
@@ -42,8 +43,7 @@ public:
         , last_index(0)
         , last_even_dimension(0)
         , cached(false)
-    {
-    }
+    {}
 
     inline double operator()(unsigned dimension, unsigned long long index)
     {
@@ -69,8 +69,6 @@ public:
         return even ? last_even : last_odd;
     }
 };
-const long total_num = 100000;
-const double real_num = 1.0e12;
 
 int
 main()
@@ -85,19 +83,21 @@ main()
     std::uniform_real_distribution<double> distribution(0.0, 1.0);
 #if 0
     std::mt19937 generator(seed);
-    for (Eigen::Index index = 0; index < 6; ++index) {
-        for (Eigen::Index part = 0; part < local_num; ++part) {
+    for (Eigen::Index part = 0; part < local_num; ++part) {
+        for (Eigen::Index index = 0; index < 6; ++index) {
             particles(part, index) = distribution(generator);
         }
-        particles(6, index) = index;
+        particles(part, 6) = part;
     }
 #endif
 #if 1
-    Sobol_normal generator(0.0, 1.0);
+    //    Sobol_normal generator(0.0, 1.0);
+    Sobol_uniform generator(0.0, 1.0);
     for (Eigen::Index part = 0; part < local_num; ++part) {
         for (Eigen::Index index = 0; index < 6; ++index) {
             particles(part, index) = generator(index, part);
         }
+        particles(part, 6) = part;
     }
 #endif
 #if 0
