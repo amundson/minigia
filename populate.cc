@@ -79,8 +79,8 @@ main()
     auto local_num = bunch.get_local_num();
 
     std::seed_seq seed{ 11, 13, 17, 19, 23 };
-    //    std::normal_distribution<double> distribution(0.0, 1.0);
-    std::uniform_real_distribution<double> distribution(0.0, 1.0);
+    std::normal_distribution<double> distribution(0.0, 1.0);
+//    std::uniform_real_distribution<double> distribution(0.0, 1.0);
 #if 0
     std::mt19937 generator(seed);
     for (Eigen::Index part = 0; part < local_num; ++part) {
@@ -91,8 +91,8 @@ main()
     }
 #endif
 #if 1
-    //    Sobol_normal_distribution generator(0.0, 1.0);
-    Sobol_uniform_distribution generator(0.0, 1.0);
+    Sobol_normal_distribution generator(0.0, 1.0);
+    //    Sobol_uniform_distribution generator(0.0, 1.0);
     for (Eigen::Index part = 0; part < local_num; ++part) {
         for (Eigen::Index index = 0; index < 6; ++index) {
             particles(part, index) = generator(index, part);
@@ -100,7 +100,7 @@ main()
         particles(part, 6) = part;
     }
 #endif
-#if 0
+#if 1
     auto particles6(particles.block(0, 0, local_num, 6));
     particles6.rowwise() -= particles6.colwise().mean();
     auto X((particles6.adjoint() * particles6) / particles6.rows());
