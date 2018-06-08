@@ -2,6 +2,7 @@
 #include "sobol.h"
 #include <array>
 #include <chrono>
+#include <cmath>
 #include <iostream>
 #include <random>
 
@@ -146,7 +147,64 @@ public:
     }
 };
 
-const long total_num = 1000;
+class Sobol_normal
+{
+private:
+    unsigned dimension;
+    double mu, sigma;
+    bool cached;
+    unsigned long long last_even_index;
+    double last_even, last_odd;
+    std::mt19937 generator;
+
+public:
+    Sobol_normal(unsigned dimension, double mu = 0.0, double sigma = 1.0)
+        : dimension(dimension)
+        , mu(mu)
+        , sigma(sigma)
+        , cached(false)
+        , last_even_index(0)
+        , last_even(0.0)
+        , last_odd(0.0)
+    {
+        std::seed_seq seed{ 11 + 29 * dimension, 13 + 31 * dimension,
+                            17 + 37 * dimension, 19 + 41 * dimension,
+                            23 + 43 * dimension };
+        generator = std::mt19937(seed);
+    }
+
+    inline double operator()(unsigned long long halfindex)
+    {
+                unsigned long long index = halfindex * 2;
+        bool even = index % 2 == 0;
+        unsigned long long even_index = even ? index : (index - 1);
+        if ((!cached) || (last_even_index != even_index)) {
+            constexpr unsigned sobol_offset = 1;
+            double u1 = sobol::sample(even_index + sobol_offset, 2*dimension);
+            double u2 = sobol::sample(even_index + sobol_offset , 2*dimension+1);
+            //            std::cout << "gdfs:" << generator() << ", " <<
+            //            generator.max() << std::endl; double norm
+            //            = 1.0/generator.max(); double u1 = generator()*norm;
+            //            double u2 = generator()*norm;
+            constexpr double pi =
+                3.1415926535897932384626433832795028841971693993751;
+            last_even =
+                sigma * std::sqrt(-2.0 * std::log(u1)) * std::cos(2 * pi * u2) +
+                mu;
+            last_odd =
+                sigma * std::sqrt(-2.0 * std::log(u1)) * std::sin(2 * pi * u2) +
+                mu;
+            std::cout << "wtf: " << mu << ", " << sigma << ", " << u1 << ", "
+                      << u2 << std::endl;
+            cached = true;
+            last_even_index = even_index;
+        } else {
+            std::cout << "no! stop! never cached!!!!!\n";
+        }
+        return even ? last_even : last_odd;
+    }
+};
+const long total_num = 100000;
 const double real_num = 1.0e12;
 
 int
@@ -159,8 +217,8 @@ main()
 
     std::seed_seq seed{ 11, 13, 17, 19, 23 };
     //    Sobol sobol(6);
-    std::normal_distribution<double> distribution(0.0, 1.0);
-//    std::uniform_real_distribution<double> distribution(0.0, 1.0);
+    //    std::normal_distribution<double> distribution(0.0, 1.0);
+    std::uniform_real_distribution<double> distribution(0.0, 1.0);
 #if 0
     std::mt19937 generator(seed);
     for (Eigen::Index index = 0; index < 6; ++index) {
@@ -176,9 +234,9 @@ main()
     }
 #endif
 #if 1
-    Sobol_uniform generator[6] = { Sobol_uniform(0), Sobol_uniform(1),
-                                   Sobol_uniform(2), Sobol_uniform(3),
-                                   Sobol_uniform(4), Sobol_uniform(5) };
+    typedef Sobol_normal My_sobol;
+    My_sobol generator[6] = { My_sobol(0), My_sobol(1), My_sobol(2),
+                              My_sobol(3), My_sobol(4), My_sobol(5) };
     for (Eigen::Index index = 0; index < 6; ++index) {
         for (Eigen::Index part = 0; part < local_num; ++part) {
             //            particles(part, index) =
