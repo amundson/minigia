@@ -150,38 +150,44 @@ public:
 class Sobol_normal
 {
 private:
-    unsigned dimension;
     double mu, sigma;
-    bool cached;
-    unsigned long long last_even_index;
     double last_even, last_odd;
-    std::mt19937 generator;
+    unsigned long long last_index;
+    unsigned last_even_dimension;
+    //    std::mt19937 generator;
+    bool cached;
 
 public:
-    Sobol_normal(unsigned dimension, double mu = 0.0, double sigma = 1.0)
-        : dimension(dimension)
-        , mu(mu)
+    Sobol_normal(double mu = 0.0, double sigma = 1.0)
+        : mu(mu)
         , sigma(sigma)
-        , cached(false)
-        , last_even_index(0)
         , last_even(0.0)
         , last_odd(0.0)
+        , last_index(0)
+        , last_even_dimension(0)
+        , cached(false)
     {
-        std::seed_seq seed{ 11 + 29 * dimension, 13 + 31 * dimension,
-                            17 + 37 * dimension, 19 + 41 * dimension,
-                            23 + 43 * dimension };
-        generator = std::mt19937(seed);
+        //        std::seed_seq seed{ 11 + 29 * dimension, 13 + 31 * dimension,
+        //                            17 + 37 * dimension, 19 + 41 * dimension,
+        //                            23 + 43 * dimension };
+        //        generator = std::mt19937(seed);
     }
 
-    inline double operator()(unsigned long long halfindex)
+    inline double operator()(unsigned dimension, unsigned long long index)
     {
-                unsigned long long index = halfindex * 2;
-        bool even = index % 2 == 0;
-        unsigned long long even_index = even ? index : (index - 1);
-        if ((!cached) || (last_even_index != even_index)) {
+        bool even = dimension % 2 == 0;
+        unsigned even_dimension = even ? dimension : (dimension - 1);
+            std::cout << "check: " << cached << " "
+                      << last_index << " "
+                      << index << " "
+                      << last_even_dimension << " "
+                      << even_dimension << " "
+                      << dimension << "\n";
+        if ((!cached) || (last_index != index) ||
+            (last_even_dimension != even_dimension)) {
             constexpr unsigned sobol_offset = 1;
-            double u1 = sobol::sample(even_index + sobol_offset, 2*dimension);
-            double u2 = sobol::sample(even_index + sobol_offset , 2*dimension+1);
+            double u1 = sobol::sample(index + sobol_offset, even_dimension);
+            double u2 = sobol::sample(index + sobol_offset, even_dimension + 1);
             //            std::cout << "gdfs:" << generator() << ", " <<
             //            generator.max() << std::endl; double norm
             //            = 1.0/generator.max(); double u1 = generator()*norm;
@@ -197,9 +203,12 @@ public:
             std::cout << "wtf: " << mu << ", " << sigma << ", " << u1 << ", "
                       << u2 << std::endl;
             cached = true;
-            last_even_index = even_index;
+            last_even_dimension = even_dimension;
+            last_index = index;
         } else {
-            std::cout << "no! stop! never cached!!!!!\n";
+            std::cout << "no! stop! never cached!!!!!" << (!cached) << " "
+                      << (last_index != index) << " "
+                      << (last_even_dimension = even_dimension) << "\n";
         }
         return even ? last_even : last_odd;
     }
@@ -234,14 +243,15 @@ main()
     }
 #endif
 #if 1
-    typedef Sobol_normal My_sobol;
-    My_sobol generator[6] = { My_sobol(0), My_sobol(1), My_sobol(2),
-                              My_sobol(3), My_sobol(4), My_sobol(5) };
+    //    typedef Sobol_normal My_sobol;
+    //    My_sobol generator[6] = { My_sobol(0), My_sobol(1), My_sobol(2),
+    //                              My_sobol(3), My_sobol(4), My_sobol(5) };
+    Sobol_normal generator(0.0, 1.0);
     for (Eigen::Index index = 0; index < 6; ++index) {
         for (Eigen::Index part = 0; part < local_num; ++part) {
             //            particles(part, index) =
             //            distribution(generator[index]);
-            particles(part, index) = generator[index](part);
+            particles(part, index) = generator(index, part);
             std::cout << part << ", " << index << ": "
                       << particles(part, index);
             std::cout << std::endl;
