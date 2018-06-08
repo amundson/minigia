@@ -177,12 +177,9 @@ public:
     {
         bool even = dimension % 2 == 0;
         unsigned even_dimension = even ? dimension : (dimension - 1);
-            std::cout << "check: " << cached << " "
-                      << last_index << " "
-                      << index << " "
-                      << last_even_dimension << " "
-                      << even_dimension << " "
-                      << dimension << "\n";
+        std::cout << "check: " << cached << " " << last_index << " " << index
+                  << " " << last_even_dimension << " " << even_dimension << " "
+                  << dimension << "\n";
         if ((!cached) || (last_index != index) ||
             (last_even_dimension != even_dimension)) {
             constexpr unsigned sobol_offset = 1;
@@ -247,8 +244,8 @@ main()
     //    My_sobol generator[6] = { My_sobol(0), My_sobol(1), My_sobol(2),
     //                              My_sobol(3), My_sobol(4), My_sobol(5) };
     Sobol_normal generator(0.0, 1.0);
-    for (Eigen::Index index = 0; index < 6; ++index) {
-        for (Eigen::Index part = 0; part < local_num; ++part) {
+    for (Eigen::Index part = 0; part < local_num; ++part) {
+        for (Eigen::Index index = 0; index < 6; ++index) {
             //            particles(part, index) =
             //            distribution(generator[index]);
             particles(part, index) = generator(index, part);
