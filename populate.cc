@@ -70,6 +70,51 @@ public:
     }
 };
 
+// Second moments found at beginning of first space charge step
+// in fodo_space_charge
+Eigen::Matrix<double, 6, 6>
+example_mom2()
+{
+    Eigen::Matrix<double, 6, 6> mom2;
+    mom2(0, 0) = 3.219e-05;
+    mom2(0, 1) = 1.141e-06;
+    mom2(0, 2) = 0;
+    mom2(0, 3) = 0;
+    mom2(0, 4) = 0;
+    mom2(0, 5) = 0;
+    mom2(1, 0) = 1.141e-06;
+    mom2(1, 1) = 7.152e-08;
+    mom2(1, 2) = 0;
+    mom2(1, 3) = 0;
+    mom2(1, 4) = 0;
+    mom2(1, 5) = 0;
+    mom2(2, 0) = 0;
+    mom2(2, 1) = 0;
+    mom2(2, 2) = 7.058e-06;
+    mom2(2, 3) = -3.226e-07;
+    mom2(2, 4) = 0;
+    mom2(2, 5) = 0;
+    mom2(3, 0) = 0;
+    mom2(3, 1) = 0;
+    mom2(3, 2) = -3.226e-07;
+    mom2(3, 3) = 1.564e-07;
+    mom2(3, 4) = 0;
+    mom2(3, 5) = 0;
+    mom2(4, 0) = 0;
+    mom2(4, 1) = 0;
+    mom2(4, 2) = 0;
+    mom2(4, 3) = 0;
+    mom2(4, 4) = 0.0001643;
+    mom2(4, 5) = -2.507e-09;
+    mom2(5, 0) = 0;
+    mom2(5, 1) = 0;
+    mom2(5, 2) = 0;
+    mom2(5, 3) = 0;
+    mom2(5, 4) = -2.507e-09;
+    mom2(5, 5) = 1e-08;
+    return mom2;
+}
+
 int
 main()
 {
@@ -116,8 +161,13 @@ main()
     std::chrono::duration<double> elapsed_seconds = end - start;
     std::cout << "adjustment took " << elapsed_seconds.count() << "seconds\n";
 
+    auto C(example_mom2());
+    Eigen::Matrix<double, 6, 6> G(C.llt().matrixL());
+    particles6 *= G.transpose();
+
     auto Xfinal((particles6.adjoint() * particles6) / particles6.rows());
     std::cout << "final covariances = \n" << Xfinal << std::endl;
+    std::cout << "expected covariances = \n" << C << std::endl;
 #endif
 
     bunch.write_particle_matrix("populated.dat");
