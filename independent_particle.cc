@@ -6,13 +6,15 @@
 
 #include <mpi.h>
 #if defined(_OPENMP)
-   #include <omp.h>
+#include <omp.h>
 #endif
 
 #include "bunch.h"
 #include "bunch_data_paths.h"
 #include "gsvector.h"
 #include "populate.h"
+
+#include <beamline/ParticleBunch.h>
 
 const int particles_per_rank = 100000;
 const double real_particles = 1.0e12;
@@ -55,7 +57,7 @@ void
 propagate_orig(Bunch& bunch, drift& thedrift)
 {
     auto local_num = bunch.get_local_num();
-    Bunch::Particles & particles = bunch.get_local_particles();
+    Bunch::Particles& particles = bunch.get_local_particles();
     auto length = thedrift.Length();
     auto reference_momentum = bunch.get_reference_particle().get_momentum();
     auto m = bunch.get_mass();
@@ -122,11 +124,11 @@ propagate_omp_simd(Bunch& bunch, drift& thedrift)
     auto local_num = bunch.get_local_num();
     const auto length = thedrift.Length();
     const auto reference_momentum =
-            bunch.get_reference_particle().get_momentum();
+        bunch.get_reference_particle().get_momentum();
     const auto m = bunch.get_mass();
     const auto reference_time = thedrift.getReferenceTime();
     double *RESTRICT xa, *RESTRICT xpa, *RESTRICT ya, *RESTRICT ypa,
-            *RESTRICT cdta, *RESTRICT dpopa;
+        *RESTRICT cdta, *RESTRICT dpopa;
     bunch.set_arrays(xa, xpa, ya, ypa, cdta, dpopa);
 
 #pragma omp simd
@@ -153,17 +155,17 @@ propagate_omp_simd2(Bunch& bunch, drift& thedrift)
     auto local_num = bunch.get_local_num();
     const auto length = thedrift.Length();
     const auto reference_momentum =
-            bunch.get_reference_particle().get_momentum();
+        bunch.get_reference_particle().get_momentum();
     const auto m = bunch.get_mass();
     const auto reference_time = thedrift.getReferenceTime();
     double *RESTRICT xa, *RESTRICT xpa, *RESTRICT ya, *RESTRICT ypa,
-            *RESTRICT cdta, *RESTRICT dpopa;
+        *RESTRICT cdta, *RESTRICT dpopa;
     bunch.set_arrays(xa, xpa, ya, ypa, cdta, dpopa);
 
 #pragma omp simd
     for (int part = 0; part < local_num; ++part) {
-        drift_unit(xa[part], ya[part], cdta[part], xpa[part], ypa[part], dpopa[part],
-                length, reference_momentum, m, reference_time);
+        drift_unit(xa[part], ya[part], cdta[part], xpa[part], ypa[part],
+                   dpopa[part], length, reference_momentum, m, reference_time);
     }
 }
 
@@ -173,17 +175,17 @@ propagate_omp_simd3(Bunch& bunch, drift& thedrift)
     auto local_num = bunch.get_local_num();
     const auto length = thedrift.Length();
     const auto reference_momentum =
-            bunch.get_reference_particle().get_momentum();
+        bunch.get_reference_particle().get_momentum();
     const auto m = bunch.get_mass();
     const auto reference_time = thedrift.getReferenceTime();
-    auto & particles(bunch.get_local_particles());
-    
+    auto& particles(bunch.get_local_particles());
+
 #pragma omp simd
     for (Eigen::Index part = 0; part < local_num; ++part) {
-        drift_unit(particles(part, Bunch::x), particles(part, Bunch::y), 
-                particles(part, Bunch::cdt), particles(part, Bunch::xp), 
-                particles(part, Bunch::yp), particles(part, Bunch::dpop),
-                length, reference_momentum, m, reference_time);
+        drift_unit(particles(part, Bunch::x), particles(part, Bunch::y),
+                   particles(part, Bunch::cdt), particles(part, Bunch::xp),
+                   particles(part, Bunch::yp), particles(part, Bunch::dpop),
+                   length, reference_momentum, m, reference_time);
     }
 }
 #endif
@@ -272,6 +274,81 @@ run_check(void (*propagator)(Bunch&, drift&), const char* name, drift& thedrift,
     }
 }
 
+Particle
+reference_particle_to_chef_particle(
+    Reference_particle const& reference_particle)
+{
+    double mass = reference_particle.get_mass();
+    double momentum = reference_particle.get_momentum();
+    int charge = reference_particle.get_charge();
+    const double mass_tolerance = 1.0e-5;
+    Vector chef_state(6);
+    chef_state[0] = 0;
+    chef_state[1] = 0;
+    chef_state[2] = 0;
+    chef_state[3] = 0;
+    chef_state[4] = 0;
+    chef_state[5] = 0;
+    if (charge == 1) {
+        if (floating_point_equal(mass, PH_NORM_mp, mass_tolerance)) {
+            Proton proton;
+            proton.SetReferenceMomentum(momentum);
+            proton.State() = chef_state;
+            return proton;
+        } else {
+            if (floating_point_equal(mass, PH_NORM_me, mass_tolerance)) {
+                Positron positron;
+                positron.SetReferenceMomentum(momentum);
+                positron.State() = chef_state;
+                return positron;
+            } else {
+                if (floating_point_equal(mass, PH_NORM_mmu, mass_tolerance)) {
+                    AntiMuon antimuon;
+                    antimuon.SetReferenceMomentum(momentum);
+                    antimuon.State() = chef_state;
+                    return antimuon;
+                } else {
+                    throw(runtime_error(
+                        "reference_particle_to_chef_particle: particle mass "
+                        "not equal to proton, electron or muon mass."));
+                }
+            }
+        }
+    } else {
+        if (charge == -1) {
+            if (floating_point_equal(mass, PH_NORM_mp, mass_tolerance)) {
+                AntiProton antiproton;
+                antiproton.SetReferenceMomentum(momentum);
+                antiproton.State() = chef_state;
+                return antiproton;
+            } else {
+                if (floating_point_equal(mass, PH_NORM_me, mass_tolerance)) {
+                    Electron electron;
+                    electron.SetReferenceMomentum(momentum);
+                    electron.State() = chef_state;
+                    return electron;
+                } else {
+                    if (floating_point_equal(mass, PH_NORM_mmu,
+                                             mass_tolerance)) {
+                        Muon muon;
+                        muon.SetReferenceMomentum(momentum);
+                        muon.State() = chef_state;
+                        return muon;
+                    } else {
+                        throw(
+                            runtime_error("reference_particle_to_chef_particle:"
+                                          " particle mass not equal to proton, "
+                                          "electron or muon mass."));
+                    }
+                }
+            }
+        } else {
+            throw(runtime_error("reference_particle_to_chef_particle: particle "
+                                "does not have unit charge."));
+        }
+    }
+}
+
 void
 run()
 {
@@ -285,14 +362,18 @@ run()
 
     Bunch bunch(particles_per_rank, real_particles, 1, 0);
     populate_gaussian(bunch);
+
+    ParticleBunch chef_bunch(
+        reference_particle_to_chef_particle(bunch.get_reference_particle()));
+
     drift thedrift;
 
     auto reference_timing =
         do_timing(&propagate_orig, "orig", bunch, thedrift, 0.0, rank);
 
     run_check(&propagate_double, "optimized", thedrift, size, rank);
-    auto opt_timing = do_timing(&propagate_double, "optimized", bunch,
-                                  thedrift, reference_timing, rank);
+    auto opt_timing = do_timing(&propagate_double, "optimized", bunch, thedrift,
+                                reference_timing, rank);
     if (rank == 0) {
         std::cout << "GSVector::implementation = " << GSVector::implementation
                   << std::endl;
@@ -302,13 +383,15 @@ run()
 
 #if defined(_OPENMP)
     run_check(&propagate_omp_simd, "omp simd", thedrift, size, rank);
-    do_timing(&propagate_omp_simd, "omp simd", bunch, thedrift, opt_timing, rank);
+    do_timing(&propagate_omp_simd, "omp simd", bunch, thedrift, opt_timing,
+              rank);
     run_check(&propagate_omp_simd2, "omp simd2", thedrift, size, rank);
-    do_timing(&propagate_omp_simd2, "omp simd2", bunch, thedrift, opt_timing, rank);
+    do_timing(&propagate_omp_simd2, "omp simd2", bunch, thedrift, opt_timing,
+              rank);
     run_check(&propagate_omp_simd3, "omp simd3", thedrift, size, rank);
-    do_timing(&propagate_omp_simd3, "omp simd3", bunch, thedrift, opt_timing, rank);
+    do_timing(&propagate_omp_simd3, "omp simd3", bunch, thedrift, opt_timing,
+              rank);
 #endif
-
 }
 
 int

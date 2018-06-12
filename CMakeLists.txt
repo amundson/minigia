@@ -12,6 +12,11 @@ find_package(Boost 1.41 REQUIRED)
 find_package(OpenMP)
 find_package(FFTW REQUIRED MPI)
 
+# chef
+find_package(CHEF REQUIRED)
+INCLUDE_DIRECTORIES(${CHEF_INCLUDE_DIR})
+LINK_DIRECTORIES(${CHEF_LIB_DIR})
+
 configure_file("${MINIGIA_SOURCE_DIR}/bunch_data_paths.h.in"
                "${MINIGIA_BINARY_DIR}/bunch_data_paths.h" IMMEDIATE)
 
@@ -32,6 +37,8 @@ target_link_libraries(independent_particle PRIVATE MPI::MPI_CXX)
 if(OpenMP_CXX_FOUND)
   target_link_libraries(independent_particle PRIVATE OpenMP::OpenMP_CXX)
 endif()
+target_link_libraries(independent_particle PRIVATE ${CHEF_LIBS})
+target_link_libraries(independent_particle PRIVATE boost_system)
 
 add_executable(populate
     populate.cc
