@@ -7,8 +7,8 @@
 #include "restrict_extension.h"
 #include <Eigen/Dense>
 #include <fstream>
-#include <iostream>
 #include <iomanip>
+#include <iostream>
 
 //  J. Beringer et al. (Particle Data Group), PR D86, 010001 (2012) and 2013
 //  partial update for the 2014 edition (URL: http://pdg.lbl.gov)
