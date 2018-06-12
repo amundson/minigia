@@ -12,6 +12,7 @@
 #include "bunch.h"
 #include "bunch_data_paths.h"
 #include "gsvector.h"
+#include "populate.h"
 
 const int particles_per_rank = 100000;
 const double real_particles = 1.0e12;
@@ -282,7 +283,8 @@ run()
         exit(error);
     }
 
-    Bunch bunch(bunch_in_0_path);
+    Bunch bunch(particles_per_rank, real_particles, 1, 0);
+    populate_gaussian(bunch);
     drift thedrift;
 
     auto reference_timing =
