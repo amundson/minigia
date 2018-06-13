@@ -10,7 +10,11 @@ endif()
 find_package(MPI REQUIRED CXX)
 find_package(Boost 1.41 REQUIRED)
 find_package(OpenMP)
+
+option(SC "compile space charge benchmarks; requires FFTW" OFF)
+if(SC)
 find_package(FFTW REQUIRED MPI)
+endif()
 
 # chef
 option(CHEF "Use chef libraries" OFF)
@@ -56,6 +60,7 @@ if(OpenMP_CXX_FOUND)
   target_link_libraries(populate PRIVATE OpenMP::OpenMP_CXX)
 endif()
 
+if(SC)
 add_executable(space_charge_3d
                space_charge_3d.cc
                space_charge_3d_open_hockney.cc
@@ -101,5 +106,6 @@ target_include_directories(space_charge_3d PRIVATE vectorclass)
 target_include_directories(space_charge_3d PRIVATE eigen)
 target_link_libraries(space_charge_3d PRIVATE MPI::MPI_CXX)
 target_link_libraries(space_charge_3d PRIVATE ${FFTW_LIBRARIES})
+endif()
 
 add_subdirectory(tests)
