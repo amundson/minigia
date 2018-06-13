@@ -341,6 +341,29 @@ propagate_gsv(Bunch& bunch, libff_drift& thelibff_drift)
     }
 }
 
+void
+propagate_double_simpler(Bunch& bunch, libff_drift& thelibff_drift)
+{
+    auto local_num = bunch.get_local_num();
+    if (local_num % GSVector::size != 0) {
+        throw std::runtime_error(
+            "local number of particles must be a multiple of GSVector::size");
+    }
+    const auto length = thelibff_drift.Length();
+    const auto reference_momentum =
+        bunch.get_reference_particle().get_momentum();
+    const auto m = bunch.get_mass();
+    const auto reference_time = thelibff_drift.getReferenceTime();
+    double *RESTRICT xa, *RESTRICT xpa, *RESTRICT ya, *RESTRICT ypa,
+        *RESTRICT cdta, *RESTRICT dpopa;
+    bunch.set_arrays(xa, xpa, ya, ypa, cdta, dpopa);
+
+    for (int part = 0; part < local_num; ++part) {
+        libff_drift_unit(xa[part], ya[part], cdta[part], xpa[part], ypa[part], 
+                dpopa[part], length, reference_momentum, m, reference_time);
+    }
+}
+
 #ifdef HAVE_CHEF
 double
 do_chef_timing(void (*propagator)(ParticleBunch&, drift&), const char* name,
@@ -558,6 +581,9 @@ run()
     }
     run_check(&propagate_gsv, "vectorized", thelibff_drift, size, rank);
     do_timing(&propagate_gsv, "vectorized", bunch, thelibff_drift, opt_timing,
+              rank);
+    run_check(&propagate_double_simpler, "not manually vectorized", thelibff_drift, size, rank);
+    do_timing(&propagate_double_simpler, "not manually vectorized", bunch, thelibff_drift, opt_timing,
               rank);
 
 #if defined(_OPENMP)
