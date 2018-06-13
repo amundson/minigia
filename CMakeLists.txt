@@ -13,9 +13,13 @@ find_package(OpenMP)
 find_package(FFTW REQUIRED MPI)
 
 # chef
+option(CHEF "Use chef libraries" OFF)
+if(CHEF)
 find_package(CHEF REQUIRED)
 INCLUDE_DIRECTORIES(${CHEF_INCLUDE_DIR})
 LINK_DIRECTORIES(${CHEF_LIB_DIR})
+add_definitions(-DHAVE_CHEF)
+endif()
 
 configure_file("${MINIGIA_SOURCE_DIR}/bunch_data_paths.h.in"
                "${MINIGIA_BINARY_DIR}/bunch_data_paths.h" IMMEDIATE)

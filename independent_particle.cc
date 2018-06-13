@@ -14,8 +14,10 @@
 #include "gsvector.h"
 #include "populate.h"
 
+#ifdef HAVE_CHEF
 #include <beamline/ParticleBunch.h>
 #include <beamline/drift.h>
+#endif
 
 const int particles_per_rank = 100000;
 const double real_particles = 1.0e12;
@@ -54,11 +56,13 @@ libff_drift_unit(T& x, T& y, T& cdt, T& xp, T& yp, T& dpop, double length,
     cdt += sqrt(D2 * inv_beta2) - reference_time;
 }
 
+#ifdef HAVE_CHEF
 void
 propagate_chef(ParticleBunch& chef_bunch, drift& drift)
 {
     drift.propagate(chef_bunch);
 }
+#endif
 
 void
 propagate_orig(Bunch& bunch, libff_drift& thelibff_drift)
@@ -337,6 +341,7 @@ propagate_gsv(Bunch& bunch, libff_drift& thelibff_drift)
     }
 }
 
+#ifdef HAVE_CHEF
 double
 do_chef_timing(void (*propagator)(ParticleBunch&, drift&), const char* name,
                ParticleBunch& chef_bunch, drift& the_drift,
@@ -371,6 +376,7 @@ do_chef_timing(void (*propagator)(ParticleBunch&, drift&), const char* name,
     }
     return best_time;
 }
+#endif
 
 double
 do_timing(void (*propagator)(Bunch&, libff_drift&), const char* name,
@@ -423,6 +429,7 @@ run_check(void (*propagator)(Bunch&, libff_drift&), const char* name,
     }
 }
 
+#ifdef HAVE_CHEF
 Particle
 reference_particle_to_chef_particle(
     Reference_particle const& reference_particle)
@@ -497,6 +504,7 @@ reference_particle_to_chef_particle(
         }
     }
 }
+#endif
 
 void
 run()
@@ -511,7 +519,9 @@ run()
 
     Bunch bunch(particles_per_rank, real_particles, 1, 0);
     populate_gaussian(bunch);
+    libff_drift thelibff_drift;
 
+#ifdef HAVE_CHEF
     ParticleBunch chef_bunch(
         reference_particle_to_chef_particle(bunch.get_reference_particle()));
 
@@ -528,15 +538,16 @@ run()
         chef_particle.set_ndp(particles(part, Bunch::dpop));
         chef_bunch.append(chef_particle);
     }
-
-    libff_drift thelibff_drift;
     drift the_drift("drift", dummy_length);
+#endif
 
     auto reference_timing =
         do_timing(&propagate_orig, "orig", bunch, thelibff_drift, 0.0, rank);
 
+#ifdef HAVE_CHEF
     do_chef_timing(&propagate_chef, "chef", chef_bunch, the_drift,
                    reference_timing, rank);
+#endif
 
     run_check(&propagate_double, "optimized", thelibff_drift, size, rank);
     auto opt_timing = do_timing(&propagate_double, "optimized", bunch,
