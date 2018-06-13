@@ -15,6 +15,7 @@
 #include "populate.h"
 
 #include <beamline/ParticleBunch.h>
+#include <beamline/drift.h>
 
 const int particles_per_rank = 100000;
 const double real_particles = 1.0e12;
@@ -22,10 +23,10 @@ const double real_particles = 1.0e12;
 const double dummy_length = 2.1;
 const double dummy_reference_time = 0.345;
 
-class drift
+class libff_drift
 {
 public:
-    drift() {}
+    libff_drift() {}
     double Length() const { return dummy_length; }
     double getReferenceTime() const { return dummy_reference_time; }
 };
@@ -38,8 +39,8 @@ invsqrt(double x)
 
 template <typename T>
 inline void
-drift_unit(T& x, T& y, T& cdt, T& xp, T& yp, T& dpop, double length,
-           double reference_momentum, double m, double reference_time)
+libff_drift_unit(T& x, T& y, T& cdt, T& xp, T& yp, T& dpop, double length,
+                 double reference_momentum, double m, double reference_time)
 {
     T inv_npz = invsqrt((dpop + 1.0) * (dpop + 1.0) - xp * xp - yp * yp);
     T lxpr = xp * length * inv_npz;
@@ -54,14 +55,20 @@ drift_unit(T& x, T& y, T& cdt, T& xp, T& yp, T& dpop, double length,
 }
 
 void
-propagate_orig(Bunch& bunch, drift& thedrift)
+propagate_chef(ParticleBunch& chef_bunch, drift& drift)
+{
+    drift.propagate(chef_bunch);
+}
+
+void
+propagate_orig(Bunch& bunch, libff_drift& thelibff_drift)
 {
     auto local_num = bunch.get_local_num();
     Bunch::Particles& particles = bunch.get_local_particles();
-    auto length = thedrift.Length();
+    auto length = thelibff_drift.Length();
     auto reference_momentum = bunch.get_reference_particle().get_momentum();
     auto m = bunch.get_mass();
-    auto reference_time = thedrift.getReferenceTime();
+    auto reference_time = thelibff_drift.getReferenceTime();
 
     for (Eigen::Index part = 0; part < local_num; ++part) {
         auto dpop(particles(part, Bunch::dpop));
@@ -88,14 +95,14 @@ propagate_orig(Bunch& bunch, drift& thedrift)
 }
 
 void
-propagate_double(Bunch& bunch, drift& thedrift)
+propagate_double(Bunch& bunch, libff_drift& thelibff_drift)
 {
     auto local_num = bunch.get_local_num();
-    const auto length = thedrift.Length();
+    const auto length = thelibff_drift.Length();
     const auto reference_momentum =
         bunch.get_reference_particle().get_momentum();
     const auto m = bunch.get_mass();
-    const auto reference_time = thedrift.getReferenceTime();
+    const auto reference_time = thelibff_drift.getReferenceTime();
     double *RESTRICT xa, *RESTRICT xpa, *RESTRICT ya, *RESTRICT ypa,
         *RESTRICT cdta, *RESTRICT dpopa;
     bunch.set_arrays(xa, xpa, ya, ypa, cdta, dpopa);
@@ -108,8 +115,8 @@ propagate_double(Bunch& bunch, drift& thedrift)
         auto cdt(cdta[part]);
         auto dpop(dpopa[part]);
 
-        drift_unit(x, y, cdt, xp, yp, dpop, length, reference_momentum, m,
-                   reference_time);
+        libff_drift_unit(x, y, cdt, xp, yp, dpop, length, reference_momentum, m,
+                         reference_time);
 
         xa[part] = x;
         ya[part] = y;
@@ -119,14 +126,14 @@ propagate_double(Bunch& bunch, drift& thedrift)
 
 #if defined(_OPENMP)
 void
-propagate_omp_simd(Bunch& bunch, drift& thedrift)
+propagate_omp_simd(Bunch& bunch, libff_drift& thelibff_drift)
 {
     auto local_num = bunch.get_local_num();
-    const auto length = thedrift.Length();
+    const auto length = thelibff_drift.Length();
     const auto reference_momentum =
         bunch.get_reference_particle().get_momentum();
     const auto m = bunch.get_mass();
-    const auto reference_time = thedrift.getReferenceTime();
+    const auto reference_time = thelibff_drift.getReferenceTime();
     double *RESTRICT xa, *RESTRICT xpa, *RESTRICT ya, *RESTRICT ypa,
         *RESTRICT cdta, *RESTRICT dpopa;
     bunch.set_arrays(xa, xpa, ya, ypa, cdta, dpopa);
@@ -140,8 +147,8 @@ propagate_omp_simd(Bunch& bunch, drift& thedrift)
         auto cdt(cdta[part]);
         auto dpop(dpopa[part]);
 
-        drift_unit(x, y, cdt, xp, yp, dpop, length, reference_momentum, m,
-                   reference_time);
+        libff_drift_unit(x, y, cdt, xp, yp, dpop, length, reference_momentum, m,
+                         reference_time);
 
         xa[part] = x;
         ya[part] = y;
@@ -150,59 +157,61 @@ propagate_omp_simd(Bunch& bunch, drift& thedrift)
 }
 
 void
-propagate_omp_simd2(Bunch& bunch, drift& thedrift)
+propagate_omp_simd2(Bunch& bunch, libff_drift& thelibff_drift)
 {
     auto local_num = bunch.get_local_num();
-    const auto length = thedrift.Length();
+    const auto length = thelibff_drift.Length();
     const auto reference_momentum =
         bunch.get_reference_particle().get_momentum();
     const auto m = bunch.get_mass();
-    const auto reference_time = thedrift.getReferenceTime();
+    const auto reference_time = thelibff_drift.getReferenceTime();
     double *RESTRICT xa, *RESTRICT xpa, *RESTRICT ya, *RESTRICT ypa,
         *RESTRICT cdta, *RESTRICT dpopa;
     bunch.set_arrays(xa, xpa, ya, ypa, cdta, dpopa);
 
 #pragma omp simd
     for (int part = 0; part < local_num; ++part) {
-        drift_unit(xa[part], ya[part], cdta[part], xpa[part], ypa[part],
-                   dpopa[part], length, reference_momentum, m, reference_time);
+        libff_drift_unit(xa[part], ya[part], cdta[part], xpa[part], ypa[part],
+                         dpopa[part], length, reference_momentum, m,
+                         reference_time);
     }
 }
 
 void
-propagate_omp_simd3(Bunch& bunch, drift& thedrift)
+propagate_omp_simd3(Bunch& bunch, libff_drift& thelibff_drift)
 {
     auto local_num = bunch.get_local_num();
-    const auto length = thedrift.Length();
+    const auto length = thelibff_drift.Length();
     const auto reference_momentum =
         bunch.get_reference_particle().get_momentum();
     const auto m = bunch.get_mass();
-    const auto reference_time = thedrift.getReferenceTime();
+    const auto reference_time = thelibff_drift.getReferenceTime();
     auto& particles(bunch.get_local_particles());
 
 #pragma omp simd
     for (Eigen::Index part = 0; part < local_num; ++part) {
-        drift_unit(particles(part, Bunch::x), particles(part, Bunch::y),
-                   particles(part, Bunch::cdt), particles(part, Bunch::xp),
-                   particles(part, Bunch::yp), particles(part, Bunch::dpop),
-                   length, reference_momentum, m, reference_time);
+        libff_drift_unit(particles(part, Bunch::x), particles(part, Bunch::y),
+                         particles(part, Bunch::cdt),
+                         particles(part, Bunch::xp), particles(part, Bunch::yp),
+                         particles(part, Bunch::dpop), length,
+                         reference_momentum, m, reference_time);
     }
 }
 #endif
 
 void
-propagate_gsv(Bunch& bunch, drift& thedrift)
+propagate_gsv(Bunch& bunch, libff_drift& thelibff_drift)
 {
     auto local_num = bunch.get_local_num();
     if (local_num % GSVector::size != 0) {
         throw std::runtime_error(
             "local number of particles must be a multiple of GSVector::size");
     }
-    const auto length = thedrift.Length();
+    const auto length = thelibff_drift.Length();
     const auto reference_momentum =
         bunch.get_reference_particle().get_momentum();
     const auto m = bunch.get_mass();
-    const auto reference_time = thedrift.getReferenceTime();
+    const auto reference_time = thelibff_drift.getReferenceTime();
     double *RESTRICT xa, *RESTRICT xpa, *RESTRICT ya, *RESTRICT ypa,
         *RESTRICT cdta, *RESTRICT dpopa;
     bunch.set_arrays(xa, xpa, ya, ypa, cdta, dpopa);
@@ -215,8 +224,8 @@ propagate_gsv(Bunch& bunch, drift& thedrift)
         GSVector cdt(&cdta[part]);
         GSVector dpop(&dpopa[part]);
 
-        drift_unit(x, y, cdt, xp, yp, dpop, length, reference_momentum, m,
-                   reference_time);
+        libff_drift_unit(x, y, cdt, xp, yp, dpop, length, reference_momentum, m,
+                         reference_time);
 
         x.store(&xa[part]);
         y.store(&ya[part]);
@@ -225,8 +234,9 @@ propagate_gsv(Bunch& bunch, drift& thedrift)
 }
 
 double
-do_timing(void (*propagator)(Bunch&, drift&), const char* name, Bunch& bunch,
-          drift& thedrift, double reference_timing, const int rank)
+do_chef_timing(void (*propagator)(ParticleBunch&, drift&), const char* name,
+               ParticleBunch& chef_bunch, drift& the_drift,
+               double reference_timing, const int rank)
 {
     double t = 0;
     const int num_runs = 100;
@@ -234,7 +244,42 @@ do_timing(void (*propagator)(Bunch&, drift&), const char* name, Bunch& bunch,
     std::vector<double> times(num_runs);
     for (size_t i = 0; i < num_runs; ++i) {
         const auto start = std::chrono::high_resolution_clock::now();
-        (*propagator)(bunch, thedrift);
+        (*propagator)(chef_bunch, the_drift);
+        const auto end = std::chrono::high_resolution_clock::now();
+        const auto time =
+            std::chrono::duration_cast<std::chrono::duration<double>>(end -
+                                                                      start)
+                .count();
+        if (time < best_time) {
+            best_time = time;
+        }
+        times.at(i) = time;
+        t += time;
+    }
+    if (rank == 0) {
+        std::cout << name << " best time = " << best_time << std::endl;
+    }
+    if (reference_timing > 0.0) {
+        if (rank == 0) {
+            std::cout << name << " speedup = " << reference_timing / best_time
+                      << std::endl;
+        }
+    }
+    return best_time;
+}
+
+double
+do_timing(void (*propagator)(Bunch&, libff_drift&), const char* name,
+          Bunch& bunch, libff_drift& thelibff_drift, double reference_timing,
+          const int rank)
+{
+    double t = 0;
+    const int num_runs = 100;
+    auto best_time = std::numeric_limits<double>::max();
+    std::vector<double> times(num_runs);
+    for (size_t i = 0; i < num_runs; ++i) {
+        const auto start = std::chrono::high_resolution_clock::now();
+        (*propagator)(bunch, thelibff_drift);
         const auto end = std::chrono::high_resolution_clock::now();
         const auto time =
             std::chrono::duration_cast<std::chrono::duration<double>>(end -
@@ -259,16 +304,16 @@ do_timing(void (*propagator)(Bunch&, drift&), const char* name, Bunch& bunch,
 }
 
 void
-run_check(void (*propagator)(Bunch&, drift&), const char* name, drift& thedrift,
-          int size, int rank)
+run_check(void (*propagator)(Bunch&, libff_drift&), const char* name,
+          libff_drift& thelibff_drift, int size, int rank)
 {
     const double tolerance = 1.0e-14;
     const int num_test = 104 * size;
     const double real_num = 1.0e12;
     Bunch b1(num_test * size, real_num, size, rank);
     Bunch b2(num_test * size, real_num, size, rank);
-    propagate_orig(b1, thedrift);
-    propagator(b2, thedrift);
+    propagate_orig(b1, thelibff_drift);
+    propagator(b2, thelibff_drift);
     if (!check_equal(b1, b2, tolerance)) {
         std::cerr << "run_check failed for " << name << std::endl;
     }
@@ -366,31 +411,50 @@ run()
     ParticleBunch chef_bunch(
         reference_particle_to_chef_particle(bunch.get_reference_particle()));
 
-    drift thedrift;
+    auto particles = bunch.get_local_particles();
+    auto local_num = bunch.get_local_num();
+    for (int part = 0; part < local_num; ++part) {
+        Particle chef_particle(reference_particle_to_chef_particle(
+            bunch.get_reference_particle()));
+        chef_particle.set_x(particles(part, Bunch::x));
+        chef_particle.set_npx(particles(part, Bunch::xp));
+        chef_particle.set_y(particles(part, Bunch::y));
+        chef_particle.set_npy(particles(part, Bunch::yp));
+        chef_particle.set_cdt(particles(part, Bunch::cdt));
+        chef_particle.set_ndp(particles(part, Bunch::dpop));
+        chef_bunch.append(chef_particle);
+    }
+
+    libff_drift thelibff_drift;
+    drift the_drift("drift", dummy_length);
 
     auto reference_timing =
-        do_timing(&propagate_orig, "orig", bunch, thedrift, 0.0, rank);
+        do_timing(&propagate_orig, "orig", bunch, thelibff_drift, 0.0, rank);
 
-    run_check(&propagate_double, "optimized", thedrift, size, rank);
-    auto opt_timing = do_timing(&propagate_double, "optimized", bunch, thedrift,
-                                reference_timing, rank);
+    do_chef_timing(&propagate_chef, "chef", chef_bunch, the_drift,
+                   reference_timing, rank);
+
+    run_check(&propagate_double, "optimized", thelibff_drift, size, rank);
+    auto opt_timing = do_timing(&propagate_double, "optimized", bunch,
+                                thelibff_drift, reference_timing, rank);
     if (rank == 0) {
         std::cout << "GSVector::implementation = " << GSVector::implementation
                   << std::endl;
     }
-    run_check(&propagate_gsv, "vectorized", thedrift, size, rank);
-    do_timing(&propagate_gsv, "vectorized", bunch, thedrift, opt_timing, rank);
+    run_check(&propagate_gsv, "vectorized", thelibff_drift, size, rank);
+    do_timing(&propagate_gsv, "vectorized", bunch, thelibff_drift, opt_timing,
+              rank);
 
 #if defined(_OPENMP)
-    run_check(&propagate_omp_simd, "omp simd", thedrift, size, rank);
-    do_timing(&propagate_omp_simd, "omp simd", bunch, thedrift, opt_timing,
-              rank);
-    run_check(&propagate_omp_simd2, "omp simd2", thedrift, size, rank);
-    do_timing(&propagate_omp_simd2, "omp simd2", bunch, thedrift, opt_timing,
-              rank);
-    run_check(&propagate_omp_simd3, "omp simd3", thedrift, size, rank);
-    do_timing(&propagate_omp_simd3, "omp simd3", bunch, thedrift, opt_timing,
-              rank);
+    run_check(&propagate_omp_simd, "omp simd", thelibff_drift, size, rank);
+    do_timing(&propagate_omp_simd, "omp simd", bunch, thelibff_drift,
+              opt_timing, rank);
+    run_check(&propagate_omp_simd2, "omp simd2", thelibff_drift, size, rank);
+    do_timing(&propagate_omp_simd2, "omp simd2", bunch, thelibff_drift,
+              opt_timing, rank);
+    run_check(&propagate_omp_simd3, "omp simd3", thelibff_drift, size, rank);
+    do_timing(&propagate_omp_simd3, "omp simd3", bunch, thelibff_drift,
+              opt_timing, rank);
 #endif
 }
 
