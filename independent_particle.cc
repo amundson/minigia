@@ -182,6 +182,26 @@ propagate_omp_simd2(Bunch& bunch, libff_drift& thelibff_drift)
 }
 
 void
+propagate_omp_simd3_nosimd(Bunch& bunch, libff_drift& thelibff_drift)
+{
+    auto local_num = bunch.get_local_num();
+    const auto length = thelibff_drift.Length();
+    const auto reference_momentum =
+        bunch.get_reference_particle().get_momentum();
+    const auto m = bunch.get_mass();
+    const auto reference_time = thelibff_drift.getReferenceTime();
+    auto& particles(bunch.get_local_particles());
+
+    for (Eigen::Index part = 0; part < local_num; ++part) {
+        libff_drift_unit(particles(part, Bunch::x), particles(part, Bunch::y),
+                         particles(part, Bunch::cdt),
+                         particles(part, Bunch::xp), particles(part, Bunch::yp),
+                         particles(part, Bunch::dpop), length,
+                         reference_momentum, m, reference_time);
+    }
+}
+
+void
 propagate_omp_simd3(Bunch& bunch, libff_drift& thelibff_drift)
 {
     auto local_num = bunch.get_local_num();
@@ -592,6 +612,9 @@ run()
               opt_timing, rank);
     run_check(&propagate_omp_simd2, "omp simd2", thelibff_drift, size, rank);
     do_timing(&propagate_omp_simd2, "omp simd2", bunch, thelibff_drift,
+              opt_timing, rank);
+    run_check(&propagate_omp_simd3_nosimd, "omp simd3_nosimd", thelibff_drift, size, rank);
+    do_timing(&propagate_omp_simd3_nosimd, "omp simd3_nosimd", bunch, thelibff_drift,
               opt_timing, rank);
     run_check(&propagate_omp_simd3, "omp simd3", thelibff_drift, size, rank);
     do_timing(&propagate_omp_simd3, "omp simd3", bunch, thelibff_drift,
