@@ -19,7 +19,7 @@
 #include <beamline/drift.h>
 #endif
 
-const int particles_per_rank = 100000;
+const int particles_per_rank = 1000;
 const double real_particles = 1.0e12;
 
 const double dummy_length = 2.1;
@@ -182,6 +182,27 @@ propagate_omp_simd2(Bunch& bunch, libff_drift& thelibff_drift)
 }
 
 void
+propagate_oacc(Bunch& bunch, libff_drift& thelibff_drift)
+{
+    auto local_num = bunch.get_local_num();
+    const auto length = thelibff_drift.Length();
+    const auto reference_momentum =
+        bunch.get_reference_particle().get_momentum();
+    const auto m = bunch.get_mass();
+    const auto reference_time = thelibff_drift.getReferenceTime();
+    auto& particles(bunch.get_local_particles());
+
+#pragma acc parallel loop
+    for (Eigen::Index part = 0; part < local_num; ++part) {
+        libff_drift_unit(particles(part, Bunch::x), particles(part, Bunch::y),
+                         particles(part, Bunch::cdt),
+                         particles(part, Bunch::xp), particles(part, Bunch::yp),
+                         particles(part, Bunch::dpop), length,
+                         reference_momentum, m, reference_time);
+    }
+}
+
+void
 propagate_omp_simd3(Bunch& bunch, libff_drift& thelibff_drift)
 {
     auto local_num = bunch.get_local_num();
@@ -297,6 +318,66 @@ propagate_omp_simd3_32(Bunch& bunch, libff_drift& thelibff_drift)
     auto& particles(bunch.get_local_particles());
     auto local_num = bunch.get_local_num();
 #pragma omp parallel for simd num_threads(32)
+    for (Eigen::Index part = 0; part < local_num; ++part) {
+        libff_drift_unit(particles(part, Bunch::x), particles(part, Bunch::y),
+                         particles(part, Bunch::cdt),
+                         particles(part, Bunch::xp), particles(part, Bunch::yp),
+                         particles(part, Bunch::dpop), length,
+                         reference_momentum, m, reference_time);
+    }
+}
+void
+propagate_omp_simd3_64(Bunch& bunch, libff_drift& thelibff_drift)
+{
+    const auto length = thelibff_drift.Length();
+    const auto reference_momentum =
+        bunch.get_reference_particle().get_momentum();
+    const auto m = bunch.get_mass();
+    const auto reference_time = thelibff_drift.getReferenceTime();
+
+    auto& particles(bunch.get_local_particles());
+    auto local_num = bunch.get_local_num();
+#pragma omp parallel for simd num_threads(64)
+    for (Eigen::Index part = 0; part < local_num; ++part) {
+        libff_drift_unit(particles(part, Bunch::x), particles(part, Bunch::y),
+                         particles(part, Bunch::cdt),
+                         particles(part, Bunch::xp), particles(part, Bunch::yp),
+                         particles(part, Bunch::dpop), length,
+                         reference_momentum, m, reference_time);
+    }
+}
+void
+propagate_omp_simd3_128(Bunch& bunch, libff_drift& thelibff_drift)
+{
+    const auto length = thelibff_drift.Length();
+    const auto reference_momentum =
+        bunch.get_reference_particle().get_momentum();
+    const auto m = bunch.get_mass();
+    const auto reference_time = thelibff_drift.getReferenceTime();
+
+    auto& particles(bunch.get_local_particles());
+    auto local_num = bunch.get_local_num();
+#pragma omp parallel for simd num_threads(128)
+    for (Eigen::Index part = 0; part < local_num; ++part) {
+        libff_drift_unit(particles(part, Bunch::x), particles(part, Bunch::y),
+                         particles(part, Bunch::cdt),
+                         particles(part, Bunch::xp), particles(part, Bunch::yp),
+                         particles(part, Bunch::dpop), length,
+                         reference_momentum, m, reference_time);
+    }
+}
+void
+propagate_omp_simd3_256(Bunch& bunch, libff_drift& thelibff_drift)
+{
+    const auto length = thelibff_drift.Length();
+    const auto reference_momentum =
+        bunch.get_reference_particle().get_momentum();
+    const auto m = bunch.get_mass();
+    const auto reference_time = thelibff_drift.getReferenceTime();
+
+    auto& particles(bunch.get_local_particles());
+    auto local_num = bunch.get_local_num();
+#pragma omp parallel for simd num_threads(256)
     for (Eigen::Index part = 0; part < local_num; ++part) {
         libff_drift_unit(particles(part, Bunch::x), particles(part, Bunch::y),
                          particles(part, Bunch::cdt),
@@ -593,6 +674,9 @@ run()
     run_check(&propagate_omp_simd2, "omp simd2", thelibff_drift, size, rank);
     do_timing(&propagate_omp_simd2, "omp simd2", bunch, thelibff_drift,
               opt_timing, rank);
+    run_check(&propagate_oacc, "oacc", thelibff_drift, size, rank);
+    do_timing(&propagate_oacc, "oacc", bunch, thelibff_drift,
+              opt_timing, rank);
     run_check(&propagate_omp_simd3, "omp simd3", thelibff_drift, size, rank);
     do_timing(&propagate_omp_simd3, "omp simd3", bunch, thelibff_drift,
               opt_timing, rank);
@@ -610,6 +694,15 @@ run()
               opt_timing, rank);
     run_check(&propagate_omp_simd3_32, "omp simd3_32", thelibff_drift, size, rank);
     do_timing(&propagate_omp_simd3_32, "omp simd3_32", bunch, thelibff_drift,
+              opt_timing, rank);
+    run_check(&propagate_omp_simd3_64, "omp simd3_64", thelibff_drift, size, rank);
+    do_timing(&propagate_omp_simd3_64, "omp simd3_64", bunch, thelibff_drift,
+              opt_timing, rank);
+    run_check(&propagate_omp_simd3_128, "omp simd3_128", thelibff_drift, size, rank);
+    do_timing(&propagate_omp_simd3_128, "omp simd3_128", bunch, thelibff_drift,
+              opt_timing, rank);
+    run_check(&propagate_omp_simd3_256, "omp simd3_256", thelibff_drift, size, rank);
+    do_timing(&propagate_omp_simd3_256, "omp simd3_256", bunch, thelibff_drift,
               opt_timing, rank);
 #endif
 }

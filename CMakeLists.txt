@@ -7,7 +7,7 @@ if(DEFINES)
   add_definitions(${DEFINES})
 endif()
 
-find_package(MPI REQUIRED CXX)
+find_package(MPI REQUIRED )
 find_package(Boost 1.41 REQUIRED)
 find_package(OpenMP)
 
