@@ -12,9 +12,9 @@ find_package(Boost 1.41 REQUIRED)
 find_package(OpenMP)
 
 option(SC "compile space charge benchmarks; requires FFTW" OFF)
-if(SC)
+#if(SC)
 find_package(FFTW REQUIRED MPI)
-endif()
+#endif()
 
 # chef
 option(CHEF "Use chef libraries" OFF)
@@ -59,6 +59,16 @@ target_link_libraries(populate PRIVATE MPI::MPI_CXX)
 if(OpenMP_CXX_FOUND)
   target_link_libraries(populate PRIVATE OpenMP::OpenMP_CXX)
 endif()
+
+add_executable(fft
+    fft-main.cc
+    commxx.cc
+    commxx.h
+    distributed_fft3d.h
+    distributed_fft3d.cc
+    multi_array_typedefs.h)
+target_link_libraries(fft PRIVATE ${FFTW_LIBRARIES})
+target_link_libraries(fft PRIVATE MPI::MPI_CXX)
 
 if(SC)
 add_executable(space_charge_3d
