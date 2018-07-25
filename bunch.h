@@ -2,6 +2,7 @@
 #define BUNCH_H_
 
 #include "commxx.h"
+#include "compare.h"
 #include "multi_array_typedefs.h"
 #include "reference_particle.h"
 #include "restrict_extension.h"
@@ -172,38 +173,6 @@ public:
 
     virtual ~Bunch() {}
 };
-
-inline bool
-floating_point_equal(double a, double b, double tolerance)
-{
-    if (std::abs(a) < tolerance) {
-        return (std::abs(a - b) < tolerance);
-    } else {
-        return (std::abs((a - b) / a) < tolerance);
-    }
-}
-
-inline bool
-eigen_check_equal(Bunch::Particles const& a, Bunch::Particles const& b,
-                  double tolerance)
-{
-    //    return a.isApprox(b, tolerance);
-    for (Eigen::Index i = 0; i < a.rows(); ++i) {
-        for (Eigen::Index j = 0; j < a.cols(); j++) {
-            if (!floating_point_equal(a(i, j), b(i, j), tolerance)) {
-                std::cerr << "eigen_check_equal:\n";
-                std::cerr << "  a(" << i << "," << j << ") = " << a(i, j)
-                          << std::endl;
-                std::cerr << "  b(" << i << "," << j << ") = " << b(i, j)
-                          << std::endl;
-                std::cerr << "  a-b = " << a(i, j) - b(i, j)
-                          << ", tolerance = " << tolerance << std::endl;
-                return false;
-            }
-        }
-    }
-    return true;
-}
 
 inline bool
 check_equal(Bunch& b1, Bunch& b2, double tolerance)
