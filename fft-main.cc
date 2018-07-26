@@ -2,6 +2,7 @@
 #include <fstream>
 #include <iostream>
 
+#include "compare.h"
 #include "distributed_fft3d.h"
 
 void
@@ -22,7 +23,7 @@ write_marray3dc(const char* filename, MArray3dc const& a)
 }
 
 MArray3dc
-read_marray3dc(const char * filename)
+read_marray3dc(const char* filename)
 {
     std::ifstream file(filename);
     std::array<int, 3> cshape;
@@ -43,7 +44,7 @@ read_marray3dc(const char * filename)
 void
 run()
 {
-    const std::vector<int> shape{ 4, 2, 2 };
+    const std::vector<int> shape{ 32, 16, 8 };
     Commxx_sptr commxx_sptr(new Commxx);
     Distributed_fft3d distributed_fft3d(shape, commxx_sptr, FFTW_ESTIMATE);
     auto lower = distributed_fft3d.get_lower();
@@ -74,7 +75,10 @@ run()
 
     write_marray3dc("fft-carray.dat", carray);
     auto check(read_marray3dc("fft-carray.dat"));
-    write_marray3dc("check.dat", check);
+    const double tolerance = 1.0e-15;
+    std::cout << "check written: "
+              << marray_check_equal(carray, check, tolerance) << std::endl;
+    //    write_marray3dc("check.dat", check);
     start = std::chrono::high_resolution_clock::now();
     distributed_fft3d.inv_transform(carray, rarray);
     end = std::chrono::high_resolution_clock::now();

@@ -69,6 +69,7 @@ add_executable(fft
     multi_array_typedefs.h)
 target_link_libraries(fft PRIVATE ${FFTW_LIBRARIES})
 target_link_libraries(fft PRIVATE MPI::MPI_CXX)
+target_include_directories(fft PRIVATE eigen)
 
 if(SC)
 add_executable(space_charge_3d
