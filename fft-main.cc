@@ -73,7 +73,7 @@ run()
             .count();
     std::cout << "time = " << time << " s\n";
 
-    write_marray3dc("fft-carray.dat", carray);
+    //    write_marray3dc("fft-carray.dat", carray);
     auto check(read_marray3dc("fft-carray.dat"));
     const double tolerance = 1.0e-15;
     std::cout << "check written: "
@@ -86,7 +86,8 @@ run()
         std::chrono::duration_cast<std::chrono::duration<double>>(end - start)
             .count();
     std::cout << "inverse time = " << time << " s\n";
-    std::cout << "success!\n";
+    std::cout << "check roundtrip: "
+              << marray_check_equal(rarray, orig, tolerance);
 }
 
 int
