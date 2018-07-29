@@ -60,6 +60,8 @@ if(OpenMP_CXX_FOUND)
   target_link_libraries(populate PRIVATE OpenMP::OpenMP_CXX)
 endif()
 
+add_subdirectory(fftwpp)
+
 add_executable(fft
     fft-main.cc
     commxx.cc
@@ -70,6 +72,7 @@ add_executable(fft
 target_link_libraries(fft PRIVATE ${FFTW_LIBRARIES})
 target_link_libraries(fft PRIVATE MPI::MPI_CXX)
 target_include_directories(fft PRIVATE eigen)
+target_link_libraries(fft PRIVATE fftwpp)
 
 if(SC)
 add_executable(space_charge_3d
