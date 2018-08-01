@@ -1,10 +1,106 @@
+#include <array>
 #include <chrono>
 #include <fstream>
 #include <iostream>
+#include <unsupported/Eigen/CXX11/Tensor>
 
+#include "Array.h"
 #include "compare.h"
 #include "distributed_fft3d.h"
+#include "fftw++.h"
 
+// unsigned int nx = 4, ny = 5, nz = 6;
+// unsigned int nzp = nz / 2 + 1;
+// size_t align = sizeof(Complex);
+
+// array3<Complex> F(nx, ny, nzp, align);
+// array3<double> f(nx, ny, nz, align); // For out-of-place transforms
+//// array3<double> f(nx,ny,2*nzp,(double *) F()); // For in-place transforms
+
+// rcfft3d Forward(nx, ny, nz, f, F);
+// crfft3d Backward(nx, ny, nz, F, f);
+
+// for (unsigned int i = 0; i < nx; i++)
+//    for (unsigned int j = 0; j < ny; j++)
+//        for (unsigned int k = 0; k < nz; k++)
+//            f(i, j, k) = i + j + k;
+
+// cout << "\ninput:\n" << f;
+
+// Forward.fft(f, F);
+
+// cout << "\noutput:\n" << F;
+
+// Backward.fftNormalized(F, f);
+
+// cout << "\nback to input:\n" << f;
+
+template <typename T>
+void
+write_array3(const char* filename, T const& a)
+{
+    std::ofstream file(filename);
+    file << a.Nx() << "\n";
+    file << a.Ny() << "\n";
+    file << a.Nz() << "\n";
+    file.precision(16);
+    for (unsigned long i = 0; i < a.Nx(); ++i) {
+        for (unsigned long j = 0; j < a.Ny(); ++j) {
+            for (unsigned long k = 0; k < a.Nz(); ++k) {
+                file << a(i, j, k) << "\n";
+            }
+        }
+    }
+}
+
+void
+run_fftwpp()
+{
+    unsigned int nx = 32, ny = 16, nz = 8;
+    //    unsigned int nx = 2, ny = 4, nz = 8;
+    unsigned int nz_complex = nz / 2 + 1;
+    //    unsigned int nz_padded = 2* nz_complex;
+    const std::array<unsigned int, 3> shape{ nx, ny, nz };
+    const std::array<unsigned int, 3> cshape{ nx, ny, nz_complex };
+    size_t align = sizeof(Complex);
+    Array::array3<double> rarray(shape[0], shape[1], shape[2], align);
+    Array::array3<double> orig(shape[0], shape[1], shape[2], align);
+    Array::array3<Complex> carray(cshape[0], cshape[1], cshape[2]);
+    for (int i = 0; i < shape[0]; ++i) {
+        for (int j = 0; j < shape[1]; ++j) {
+            for (int k = 0; k < shape[2]; ++k) {
+                orig(i, j, k) = rarray(i, j, k) = 1.1 * k + 100 * j + 10000 * i;
+            }
+        }
+    }
+
+    fftwpp::rcfft3d forward(shape[0], shape[1], shape[2], rarray, carray);
+    auto start = std::chrono::high_resolution_clock::now();
+    forward.fft(rarray, carray);
+    auto end = std::chrono::high_resolution_clock::now();
+    auto time =
+        std::chrono::duration_cast<std::chrono::duration<double>>(end - start)
+            .count();
+    std::cout << "fftwpp time = " << time << " s\n";
+
+    write_array3("fft-carray3.dat", carray);
+
+    fftwpp::crfft3d backward(shape[0], shape[1], shape[2], carray, rarray);
+    start = std::chrono::high_resolution_clock::now();
+    backward.fftNormalized(carray, rarray);
+    end = std::chrono::high_resolution_clock::now();
+    time =
+        std::chrono::duration_cast<std::chrono::duration<double>>(end - start)
+            .count();
+    std::cout << "inverse fftwpp time = " << time << " s\n";
+    const double tolerance = 5.0e-11;
+    auto max_diff = general_array_check_equal(shape, rarray, orig, tolerance);
+    std::cout << "check roundtrip: " << max_diff << std::endl;
+    //    if (max_diff > tolerance) {
+    //        std::cout << "orig: " << orig << std::endl;
+    //        std::cout << "rarray: " << rarray << std::endl;
+    //    }
+}
 template <typename T>
 void
 write_marray(const char* filename, T const& a)
@@ -21,6 +117,39 @@ write_marray(const char* filename, T const& a)
             }
         }
     }
+}
+
+void
+run_fftwpp_eigen()
+{
+    unsigned int nx = 32, ny = 16, nz = 8;
+    //    unsigned int nx = 2, ny = 4, nz = 8;
+    unsigned int nz_complex = nz / 2 + 1;
+    //    unsigned int nz_padded = 2* nz_complex;
+    const std::array<unsigned int, 3> shape{ nx, ny, nz };
+    const std::array<unsigned int, 3> cshape{ nx, ny, nz_complex };
+
+    Eigen::Tensor<double, 3> rarray(shape[0], shape[1], shape[2]);
+    Eigen::Tensor<double, 3> orig(shape[0], shape[1], shape[2]);
+    Eigen::Tensor<std::complex<double>, 3> carray(cshape[0], cshape[1], cshape[2]);
+
+    for (Eigen::Index i = 0; i < shape[0]; ++i) {
+        for (Eigen::Index j = 0; j < shape[1]; ++j) {
+            for (Eigen::Index k = 0; k < shape[2]; ++k) {
+                orig(i, j, k) = rarray(i, j, k) = 1.1 * k + 100 * j + 10000 * i;
+            }
+        }
+    }
+
+    fftwpp::rcfft3d forward(shape[0], shape[1], shape[2], &rarray(0, 0, 0),
+                            &carray(0, 0, 0));
+    auto start = std::chrono::high_resolution_clock::now();
+    forward.fft(&rarray(0, 0, 0), &carray(0, 0, 0));
+    auto end = std::chrono::high_resolution_clock::now();
+    auto time =
+        std::chrono::duration_cast<std::chrono::duration<double>>(end - start)
+            .count();
+    std::cout << "eigen fftwpp time = " << time << " s\n";
 }
 
 template <typename T>
@@ -117,8 +246,14 @@ int
 main(int argc, char** argv)
 {
     MPI_Init(&argc, &argv);
-    for (int i = 0; i < 10; ++i) {
+    for (int i = 0; i < 3; ++i) {
         run();
+    }
+    for (int i = 0; i < 3; ++i) {
+        run_fftwpp();
+    }
+    for (int i = 0; i < 3; ++i) {
+        run_fftwpp_eigen();
     }
     MPI_Finalize();
     return 0;
