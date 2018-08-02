@@ -8,6 +8,7 @@
 #include "compare.h"
 #include "distributed_fft3d.h"
 #include "fftw++.h"
+#include "fmt/format.h"
 
 // unsigned int nx = 4, ny = 5, nz = 6;
 // unsigned int nzp = nz / 2 + 1;
@@ -34,6 +35,8 @@
 // Backward.fftNormalized(F, f);
 
 // cout << "\nback to input:\n" << f;
+
+typedef std::array<int, 3> Shape_t;
 
 template <typename T>
 void
@@ -131,7 +134,8 @@ run_fftwpp_eigen()
 
     Eigen::Tensor<double, 3> rarray(shape[0], shape[1], shape[2]);
     Eigen::Tensor<double, 3> orig(shape[0], shape[1], shape[2]);
-    Eigen::Tensor<std::complex<double>, 3> carray(cshape[0], cshape[1], cshape[2]);
+    Eigen::Tensor<std::complex<double>, 3> carray(cshape[0], cshape[1],
+                                                  cshape[2]);
 
     for (Eigen::Index i = 0; i < shape[0]; ++i) {
         for (Eigen::Index j = 0; j < shape[1]; ++j) {
@@ -173,7 +177,7 @@ read_marray(const char* filename)
 }
 
 void
-run()
+old_run()
 {
     const std::vector<int> shape{ 32, 16, 8 };
     //    const std::vector<int> shape{ 8, 4, 2 };
@@ -242,10 +246,53 @@ run()
               << marray_check_equal(rarray, orig, tolerance) << std::endl;
 }
 
+void
+write_check(Shape_t const& shape_in, Shape_t const& cshape_in)
+{
+    Commxx_sptr commxx_sptr(new Commxx);
+    std::vector<int> shape({shape_in[0], shape_in[1], shape_in[2]});
+    Distributed_fft3d distributed_fft3d(shape, commxx_sptr, FFTW_ESTIMATE);
+    std::vector<int> rshape(distributed_fft3d.get_padded_shape_real());
+    MArray3d rarray(boost::extents[rshape[0]][rshape[1]][rshape[2]]);
+    std::vector<int> cshape(distributed_fft3d.get_padded_shape_complex());
+    MArray3dc carray(boost::extents[cshape[0]][cshape[1]][cshape[2]]);
+    for (int i = 0; i < shape[0]; ++i) {
+        for (int j = 0; j < shape[1]; ++j) {
+            for (int k = 0; k < shape[2]; ++k) {
+                rarray[i][j][k] = 1.1 * k + 100 * j + 10000 * i;
+            }
+        }
+    }
+    distributed_fft3d.transform(rarray, carray);
+
+    auto filename(
+        fmt::format("fft-carray_{}_{}_{}.dat", shape[0], shape[1], shape[2]));
+    write_marray(filename.c_str(), carray);
+    fmt::print("wrote {}\n", filename);
+}
+
+void
+run()
+{
+    int nx = 32, ny = 16, nz = 8;
+    //    unsigned int nx = 2, ny = 4, nz = 8;
+    int nz_complex = nz / 2 + 1;
+    //    unsigned int nz_padded = 2* nz_complex;
+    const Shape_t shape{ nx, ny, nz };
+    const Shape_t cshape{ nx, ny, nz_complex };
+
+    Commxx commxx;
+    if (commxx.get_size() == 1) {
+        write_check(shape, cshape);
+    }
+//    run_check(&fft_fftw, "fftw", shape);
+}
 int
 main(int argc, char** argv)
 {
     MPI_Init(&argc, &argv);
+    run();
+#if 0
     for (int i = 0; i < 3; ++i) {
         run();
     }
@@ -255,6 +302,7 @@ main(int argc, char** argv)
     for (int i = 0; i < 3; ++i) {
         run_fftwpp_eigen();
     }
+#endif
     MPI_Finalize();
     return 0;
 }
