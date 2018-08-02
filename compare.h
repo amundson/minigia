@@ -45,15 +45,27 @@ marray_check_equal(MArray3d const& a, MArray3d const& b, double tolerance)
     return max_diff;
 }
 
-inline bool
+inline std::complex<double>
 marray_check_equal(MArray3dc const& a, MArray3dc const& b, double tolerance)
 {
     //    return a.isApprox(b, tolerance);
     //    std::cerr << "marray_check_equal " << a.shape()[0] << ", " <<
     //    a.shape()[1] << ", " << a.shape()[2] << std::endl;
+    std::complex<double> max_diff(-1, -1);
     for (long i = 0; i < a.shape()[0]; ++i) {
         for (long j = 0; j < a.shape()[1]; ++j) {
             for (long k = 0; k < a.shape()[2]; ++k) {
+                std::complex<double> diff(
+                    std::abs(a[i][j][k].real() - b[i][j][k].real()),
+                    std::abs(a[i][j][k].imag() - b[i][j][k].imag()));
+                if (diff.real() > max_diff.real()) {
+                    max_diff =
+                        std::complex<double>(diff.real(), max_diff.imag());
+                }
+                if (diff.imag() > max_diff.imag()) {
+                    max_diff =
+                        std::complex<double>(max_diff.real(), diff.imag());
+                }
                 if ((!floating_point_equal(a[i][j][k].real(), b[i][j][k].real(),
                                            tolerance) ||
                      (!floating_point_equal(a[i][j][k].imag(),
@@ -65,12 +77,12 @@ marray_check_equal(MArray3dc const& a, MArray3dc const& b, double tolerance)
                               << ") = " << b[i][j][k] << std::endl;
                     std::cerr << "  a-b = " << a[i][j][k] - b[i][j][k]
                               << ", tolerance = " << tolerance << std::endl;
-                    return false;
+                    return max_diff;
                 }
             }
         }
     }
-    return true;
+    return max_diff;
 }
 
 template <typename shape_T, typename array_T>
@@ -109,7 +121,7 @@ general_array_check_equal(shape_T const& shape, array_T const& a,
     for (long i = 0; i < shape[0]; ++i) {
         for (long j = 0; j < shape[1]; ++j) {
             for (long k = 0; k < shape[2]; ++k) {
-                auto diff = std::abs(a(i,j,k) - b(i,j,k));
+                auto diff = std::abs(a(i, j, k) - b(i, j, k));
                 if (diff > max_diff) {
                     max_diff = diff;
                 }

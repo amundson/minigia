@@ -220,11 +220,16 @@ old_run()
               << marray_check_equal(rarray, orig, tolerance) << std::endl;
 }
 
+std::string
+carray_filename(Shape_t const& shape)
+{
+    return fmt::format("fft-carray_{}_{}_{}.dat", shape[0], shape[1], shape[2]);
+}
 void
 write_check(Shape_t const& shape_in, Shape_t const& cshape_in)
 {
     Commxx_sptr commxx_sptr(new Commxx);
-    std::vector<int> shape({shape_in[0], shape_in[1], shape_in[2]});
+    std::vector<int> shape({ shape_in[0], shape_in[1], shape_in[2] });
     Distributed_fft3d distributed_fft3d(shape, commxx_sptr, FFTW_ESTIMATE);
     std::vector<int> rshape(distributed_fft3d.get_padded_shape_real());
     MArray3d rarray(boost::extents[rshape[0]][rshape[1]][rshape[2]]);
@@ -239,17 +244,69 @@ write_check(Shape_t const& shape_in, Shape_t const& cshape_in)
     }
     distributed_fft3d.transform(rarray, carray);
 
-    auto filename(
-        fmt::format("fft-carray_{}_{}_{}.dat", shape[0], shape[1], shape[2]));
+    auto filename(carray_filename(shape_in));
     write_marray(filename.c_str(), carray);
     fmt::print("wrote {}\n", filename);
 }
 
 void
+run_check_distrbuted_fft3d(Shape_t const& shape_in, Shape_t const& cshape_in)
+{
+    Commxx_sptr commxx_sptr(new Commxx);
+    std::vector<int> shape({ shape_in[0], shape_in[1], shape_in[2] });
+    Distributed_fft3d distributed_fft3d(shape, commxx_sptr, FFTW_ESTIMATE);
+    auto lower = distributed_fft3d.get_lower();
+    auto upper = distributed_fft3d.get_upper();
+    std::vector<int> rshape(distributed_fft3d.get_padded_shape_real());
+    MArray3d rarray(
+        boost::extents[extent_range(lower, upper)][rshape[1]][rshape[2]]);
+    MArray3d orig(
+        boost::extents[extent_range(lower, upper)][rshape[1]][rshape[2]]);
+    std::vector<int> cshape(distributed_fft3d.get_padded_shape_complex());
+    MArray3dc carray(
+        boost::extents[extent_range(lower, upper)][cshape[1]][cshape[2]]);
+    for (int i = lower; i < upper; ++i) {
+        for (int j = 0; j < shape[1]; ++j) {
+            for (int k = 0; k < shape[2]; ++k) {
+                orig[i][j][k] = rarray[i][j][k] = 1.1 * k + 100 * j + 10000 * i;
+            }
+        }
+    }
+    distributed_fft3d.transform(rarray, carray);
+    distributed_fft3d.inv_transform(carray, rarray);
+    double norm = shape[0] * shape[1] * shape[2];
+    for (int i = lower; i < upper; ++i) {
+        for (int j = 0; j < shape[1]; ++j) {
+            for (int k = 0; k < shape[2]; ++k) {
+                rarray[i][j][k] *= 1.0 / norm;
+            }
+        }
+    }
+
+    // zero out padded region
+    for (int i = lower; i < upper; ++i) {
+        for (int j = 0; j < rshape[1]; ++j) {
+            for (int k = shape[2]; k < rshape[2]; ++k) {
+                rarray[i][j][k] = 0.0;
+                orig[i][j][k] = 0.0;
+            }
+        }
+    }
+
+    const double tolerance = 1.0e-10;
+    std::cout << "Distributed_fft3d roundtrip max error: "
+              << marray_check_equal(rarray, orig, tolerance) << std::endl;
+
+    auto filename(carray_filename(shape_in));
+    auto check(read_marray<MArray3dc>(filename.c_str()));
+    std::cout << "Distributed_fft3d carray max error: "
+              << marray_check_equal(carray, check, tolerance);
+}
+void
 run()
 {
-    int nx = 32, ny = 16, nz = 8;
-    //    unsigned int nx = 2, ny = 4, nz = 8;
+    //    int nx = 32, ny = 16, nz = 8;
+    int nx = 2, ny = 4, nz = 8;
     int nz_complex = nz / 2 + 1;
     //    unsigned int nz_padded = 2* nz_complex;
     const Shape_t shape{ nx, ny, nz };
@@ -259,8 +316,9 @@ run()
     if (commxx.get_size() == 1) {
         write_check(shape, cshape);
     }
-//    run_check(&fft_fftw, "fftw", shape);
+    run_check_distrbuted_fft3d(shape, cshape);
 }
+
 int
 main(int argc, char** argv)
 {
