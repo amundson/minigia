@@ -16,13 +16,14 @@ floating_point_equal(double a, double b, double tolerance)
 }
 
 inline double
-marray_check_equal(MArray3d const& a, MArray3d const& b, double tolerance)
+marray_check_equal(MArray3d const& a, MArray3d const& b, long lower, long upper,
+                   double tolerance)
 {
     //    return a.isApprox(b, tolerance);
     //    std::cerr << "marray_check_equal " << a.shape()[0] << ", " <<
     //    a.shape()[1] << ", " << a.shape()[2] << std::endl;
     double max_diff = -1;
-    for (long i = 0; i < a.shape()[0]; ++i) {
+    for (long i = lower; i < upper; ++i) {
         for (long j = 0; j < a.shape()[1]; ++j) {
             for (long k = 0; k < a.shape()[2]; ++k) {
                 double diff = std::abs(a[i][j][k] - b[i][j][k]);
@@ -46,13 +47,14 @@ marray_check_equal(MArray3d const& a, MArray3d const& b, double tolerance)
 }
 
 inline std::complex<double>
-marray_check_equal(MArray3dc const& a, MArray3dc const& b, double tolerance)
+marray_check_equal(MArray3dc const& a, MArray3dc const& b, long lower,
+                   long upper, double tolerance)
 {
     //    return a.isApprox(b, tolerance);
     //    std::cerr << "marray_check_equal " << a.shape()[0] << ", " <<
     //    a.shape()[1] << ", " << a.shape()[2] << std::endl;
     std::complex<double> max_diff(-1, -1);
-    for (long i = 0; i < a.shape()[0]; ++i) {
+    for (long i = lower; i < upper; ++i) {
         for (long j = 0; j < a.shape()[1]; ++j) {
             for (long k = 0; k < a.shape()[2]; ++k) {
                 std::complex<double> diff(

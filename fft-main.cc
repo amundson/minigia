@@ -186,7 +186,8 @@ old_run()
     auto check(read_marray<MArray3dc>("fft-carray.dat"));
     const double tolerance = 5.0e-11;
     std::cout << "check written: "
-              << marray_check_equal(carray, check, tolerance) << std::endl;
+              << marray_check_equal(carray, check, lower, upper, tolerance)
+              << std::endl;
     //    write_marray3dc("check.dat", check);
     start = std::chrono::high_resolution_clock::now();
     distributed_fft3d.inv_transform(carray, rarray);
@@ -217,7 +218,8 @@ old_run()
     //    write_marray("wtf-rarray.dat", rarray);
     //    write_marray("wtf-orig.dat", orig);
     std::cout << "check roundtrip: "
-              << marray_check_equal(rarray, orig, tolerance) << std::endl;
+              << marray_check_equal(rarray, orig, lower, upper, tolerance)
+              << std::endl;
 }
 
 std::string
@@ -247,6 +249,18 @@ write_check(Shape_t const& shape_in, Shape_t const& cshape_in)
     auto filename(carray_filename(shape_in));
     write_marray(filename.c_str(), carray);
     fmt::print("wrote {}\n", filename);
+}
+
+void
+print_on_ranks(Commxx_sptr commxx_sptr, const std::function<void()>& f)
+{
+    for (int rank = 0; rank < commxx_sptr->get_size(); ++rank) {
+        if (rank == commxx_sptr->get_rank()) {
+            fmt::print("rank {}: ", rank);
+            f();
+        }
+        commxx_sptr->barrier();
+    }
 }
 
 void
@@ -294,13 +308,18 @@ run_check_distrbuted_fft3d(Shape_t const& shape_in, Shape_t const& cshape_in)
     }
 
     const double tolerance = 1.0e-10;
-    std::cout << "Distributed_fft3d roundtrip max error: "
-              << marray_check_equal(rarray, orig, tolerance) << std::endl;
+    print_on_ranks(commxx_sptr, [&]() {
+        fmt::print("Distributed_fft3d roundtrip max error: {}\n",
+                   marray_check_equal(rarray, orig, lower, upper, tolerance));
+    });
 
     auto filename(carray_filename(shape_in));
     auto check(read_marray<MArray3dc>(filename.c_str()));
-    std::cout << "Distributed_fft3d carray max error: "
-              << marray_check_equal(carray, check, tolerance);
+    auto max_error = marray_check_equal(carray, check, lower, upper, tolerance);
+    print_on_ranks(commxx_sptr, [&]() {
+        fmt::print("Distributed_fft3d carray max error: ({},{})\n",
+                   max_error.real(), max_error.imag());
+    });
 }
 void
 run()
