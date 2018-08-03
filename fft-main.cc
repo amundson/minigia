@@ -324,8 +324,8 @@ run_check_distrbuted_fft3d(Shape_t const& shape_in, Shape_t const& cshape_in)
 void
 run()
 {
-    //    int nx = 32, ny = 16, nz = 8;
-    int nx = 2, ny = 4, nz = 8;
+    int nx = 32, ny = 16, nz = 8;
+    //    int nx = 2, ny = 4, nz = 8;
     int nz_complex = nz / 2 + 1;
     //    unsigned int nz_padded = 2* nz_complex;
     const Shape_t shape{ nx, ny, nz };
