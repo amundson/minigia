@@ -5,10 +5,15 @@
 #include <unsupported/Eigen/CXX11/Tensor>
 
 #include "Array.h"
+#include "Complex.h"
 #include "compare.h"
 #include "distributed_fft3d.h"
-#include "fftw++.h"
 #include "fmt/format.h"
+
+//#include "fftw++.h"
+#include "align.h"
+#include "mpifftw++.h"
+#include "mpigroup.h"
 
 typedef std::array<int, 3> Shape_t;
 
@@ -96,6 +101,7 @@ write_marray(const char* filename, T const& a)
     }
 }
 
+#if FFTWPP_NOMPI
 void
 run_fftwpp_eigen()
 {
@@ -129,6 +135,7 @@ run_fftwpp_eigen()
             .count();
     std::cout << "eigen fftwpp time = " << time << " s\n";
 }
+#endif
 
 template <typename T>
 T
@@ -321,6 +328,49 @@ run_check_distrbuted_fft3d(Shape_t const& shape_in, Shape_t const& cshape_in)
                    max_error.real(), max_error.imag());
     });
 }
+
+void
+run_check_fftwpp(Shape_t const& shape_in, Shape_t const& cshape_in)
+{
+    unsigned int nx = shape_in[0];
+    unsigned int ny = shape_in[1];
+    unsigned int nz = shape_in[2];
+    unsigned int nzp = cshape_in[2];
+
+    utils::MPIgroup group(MPI_COMM_WORLD, nx, ny);
+    utils::split3 df(nx, ny, nz, group);
+    utils::split3 dg(nx, ny, nzp, group, true);
+
+    unsigned int dfZ = df.Z;
+
+    utils::split3 dfgather(nx, ny, dfZ, group);
+
+    Array::array3<Complex> g(dg.x, dg.y, dg.Z, utils::ComplexAlign(dg.n));
+    Array::array3<double> f;
+    f.Dimension(df.x, df.y, df.Z, utils::doubleAlign(df.n));
+
+    int divisor = 0;   // Test for best block divisor
+    int alltoall = -1; // Test for best alltoall routine
+    fftwpp::rcfft3dMPI rcfft(df, dg, f, g,
+                             utils::mpiOptions(divisor, alltoall));
+    for (int i = 0; i < df.x; ++i) {
+        unsigned int ii = df.x0 + i;
+        for (int j = 0; j < df.y; ++j) {
+            unsigned int jj = df.y0 + j;
+            for (int k = 0; k < df.z; ++k) {
+                f(i, j, k) = 1.1 * k + 100 * jj + 10000 * ii;
+            }
+        }
+    }
+    auto start = std::chrono::high_resolution_clock::now();
+    rcfft.Forward(f, g);
+//    forward.fft(&rarray(0, 0, 0), &carray(0, 0, 0));
+    auto end = std::chrono::high_resolution_clock::now();
+    auto time =
+        std::chrono::duration_cast<std::chrono::duration<double>>(end - start)
+            .count();
+    std::cout << "mpifftwpp time = " << time << " s\n";
+}
 void
 run()
 {
@@ -336,6 +386,8 @@ run()
         write_check(shape, cshape);
     }
     run_check_distrbuted_fft3d(shape, cshape);
+
+    run_check_fftwpp(shape, cshape);
 }
 
 int
