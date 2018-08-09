@@ -327,6 +327,35 @@ propagate_omp_simd3_32(Bunch& bunch, libff_drift& thelibff_drift)
 }
 #endif
 
+inline void
+looper1(long local_num, const std::function<void(long part)>& f)
+{
+#pragma omp simd
+    for (Eigen::Index part = 0; part < local_num; ++part) {
+        f(part);
+    }
+}
+
+void
+propagate_lambda1(Bunch& bunch, libff_drift& thelibff_drift)
+{
+    auto local_num = bunch.get_local_num();
+    const auto length = thelibff_drift.Length();
+    const auto reference_momentum =
+        bunch.get_reference_particle().get_momentum();
+    const auto m = bunch.get_mass();
+    const auto reference_time = thelibff_drift.getReferenceTime();
+    auto& particles(bunch.get_local_particles());
+
+    looper1(local_num, [&](long part) {
+        libff_drift_unit(particles(part, Bunch::x), particles(part, Bunch::y),
+                         particles(part, Bunch::cdt),
+                         particles(part, Bunch::xp), particles(part, Bunch::yp),
+                         particles(part, Bunch::dpop), length,
+                         reference_momentum, m, reference_time);
+    });
+}
+
 void
 propagate_gsv(Bunch& bunch, libff_drift& thelibff_drift)
 {
@@ -379,8 +408,9 @@ propagate_double_simpler(Bunch& bunch, libff_drift& thelibff_drift)
     bunch.set_arrays(xa, xpa, ya, ypa, cdta, dpopa);
 
     for (int part = 0; part < local_num; ++part) {
-        libff_drift_unit(xa[part], ya[part], cdta[part], xpa[part], ypa[part], 
-                dpopa[part], length, reference_momentum, m, reference_time);
+        libff_drift_unit(xa[part], ya[part], cdta[part], xpa[part], ypa[part],
+                         dpopa[part], length, reference_momentum, m,
+                         reference_time);
     }
 }
 
@@ -602,9 +632,10 @@ run()
     run_check(&propagate_gsv, "vectorized", thelibff_drift, size, rank);
     do_timing(&propagate_gsv, "vectorized", bunch, thelibff_drift, opt_timing,
               rank);
-    run_check(&propagate_double_simpler, "not manually vectorized", thelibff_drift, size, rank);
-    do_timing(&propagate_double_simpler, "not manually vectorized", bunch, thelibff_drift, opt_timing,
-              rank);
+    run_check(&propagate_double_simpler, "not manually vectorized",
+              thelibff_drift, size, rank);
+    do_timing(&propagate_double_simpler, "not manually vectorized", bunch,
+              thelibff_drift, opt_timing, rank);
 
 #if defined(_OPENMP)
     run_check(&propagate_omp_simd, "omp simd", thelibff_drift, size, rank);
@@ -613,27 +644,40 @@ run()
     run_check(&propagate_omp_simd2, "omp simd2", thelibff_drift, size, rank);
     do_timing(&propagate_omp_simd2, "omp simd2", bunch, thelibff_drift,
               opt_timing, rank);
-    run_check(&propagate_omp_simd3_nosimd, "omp simd3_nosimd", thelibff_drift, size, rank);
-    do_timing(&propagate_omp_simd3_nosimd, "omp simd3_nosimd", bunch, thelibff_drift,
-              opt_timing, rank);
+    run_check(&propagate_omp_simd3_nosimd, "omp simd3_nosimd", thelibff_drift,
+              size, rank);
+    do_timing(&propagate_omp_simd3_nosimd, "omp simd3_nosimd", bunch,
+              thelibff_drift, opt_timing, rank);
     run_check(&propagate_omp_simd3, "omp simd3", thelibff_drift, size, rank);
     do_timing(&propagate_omp_simd3, "omp simd3", bunch, thelibff_drift,
               opt_timing, rank);
-    run_check(&propagate_omp_simd3_2, "omp simd3_2", thelibff_drift, size, rank);
+    run_check(&propagate_omp_simd3_2, "omp simd3_2", thelibff_drift, size,
+              rank);
     do_timing(&propagate_omp_simd3_2, "omp simd3_2", bunch, thelibff_drift,
               opt_timing, rank);
-    run_check(&propagate_omp_simd3_4, "omp simd3_4", thelibff_drift, size, rank);
+    run_check(&propagate_omp_simd3_4, "omp simd3_4", thelibff_drift, size,
+              rank);
     do_timing(&propagate_omp_simd3_4, "omp simd3_4", bunch, thelibff_drift,
               opt_timing, rank);
-    run_check(&propagate_omp_simd3_8, "omp simd3_8", thelibff_drift, size, rank);
+    run_check(&propagate_omp_simd3_8, "omp simd3_8", thelibff_drift, size,
+              rank);
     do_timing(&propagate_omp_simd3_8, "omp simd3_8", bunch, thelibff_drift,
               opt_timing, rank);
-    run_check(&propagate_omp_simd3_16, "omp simd3_16", thelibff_drift, size, rank);
-    do_timing(&propagate_omp_simd3_16, "omp simd3_16", bunch, thelibff_drift,
-              opt_timing, rank);
-    run_check(&propagate_omp_simd3_32, "omp simd3_32", thelibff_drift, size, rank);
-    do_timing(&propagate_omp_simd3_32, "omp simd3_32", bunch, thelibff_drift,
-              opt_timing, rank);
+    //    run_check(&propagate_omp_simd3_16, "omp simd3_16", thelibff_drift,
+    //    size,
+    //              rank);
+    //    do_timing(&propagate_omp_simd3_16, "omp simd3_16", bunch,
+    //    thelibff_drift,
+    //              opt_timing, rank);
+    //    run_check(&propagate_omp_simd3_32, "omp simd3_32", thelibff_drift,
+    //    size,
+    //              rank);
+    //    do_timing(&propagate_omp_simd3_32, "omp simd3_32", bunch,
+    //    thelibff_drift,
+    //              opt_timing, rank);
+    run_check(&propagate_lambda1, "lambda1", thelibff_drift, size, rank);
+    do_timing(&propagate_lambda1, "lambda1", bunch, thelibff_drift, opt_timing,
+              rank);
 #endif
 }
 
