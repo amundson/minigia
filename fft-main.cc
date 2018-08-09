@@ -346,8 +346,9 @@ run_check_fftwpp(Shape_t const& shape_in, Shape_t const& cshape_in)
     utils::split3 dfgather(nx, ny, dfZ, group);
 
     Array::array3<Complex> g(dg.x, dg.y, dg.Z, utils::ComplexAlign(dg.n));
-    Array::array3<double> f;
+    Array::array3<double> f, orig;
     f.Dimension(df.x, df.y, df.Z, utils::doubleAlign(df.n));
+    orig.Dimension(df.x, df.y, df.Z, utils::doubleAlign(df.n));
 
     int divisor = 0;   // Test for best block divisor
     int alltoall = -1; // Test for best alltoall routine
@@ -358,18 +359,31 @@ run_check_fftwpp(Shape_t const& shape_in, Shape_t const& cshape_in)
         for (int j = 0; j < df.y; ++j) {
             unsigned int jj = df.y0 + j;
             for (int k = 0; k < df.z; ++k) {
-                f(i, j, k) = 1.1 * k + 100 * jj + 10000 * ii;
+                orig(i, j, k) = f(i, j, k) = 1.1 * k + 100 * jj + 10000 * ii;
             }
         }
     }
     auto start = std::chrono::high_resolution_clock::now();
     rcfft.Forward(f, g);
-//    forward.fft(&rarray(0, 0, 0), &carray(0, 0, 0));
     auto end = std::chrono::high_resolution_clock::now();
     auto time =
         std::chrono::duration_cast<std::chrono::duration<double>>(end - start)
             .count();
     std::cout << "mpifftwpp time = " << time << " s\n";
+
+    start = std::chrono::high_resolution_clock::now();
+    rcfft.Backward(g, f);
+    end = std::chrono::high_resolution_clock::now();
+    time =
+        std::chrono::duration_cast<std::chrono::duration<double>>(end - start)
+            .count();
+    std::cout << "mpifftwpp backward time = " << time << " s\n";
+
+    rcfft.Normalize(f);
+    const double tolerance = 1.0e-10;
+    std::cout << "mpifftwpp check roundtrip: "
+              << general_array_check_equal(shape_in, f, orig, tolerance)
+              << std::endl;
 }
 void
 run()
