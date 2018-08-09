@@ -369,7 +369,9 @@ run_check_fftwpp(Shape_t const& shape_in, Shape_t const& cshape_in)
     auto time =
         std::chrono::duration_cast<std::chrono::duration<double>>(end - start)
             .count();
-    std::cout << "mpifftwpp time = " << time << " s\n";
+    Commxx_sptr commxx_sptr(new Commxx);
+    print_on_ranks(commxx_sptr,
+                   [&]() { fmt::print("mpifftwpp time = {}\n", time); });
 
     start = std::chrono::high_resolution_clock::now();
     rcfft.Backward(g, f);
@@ -377,17 +379,20 @@ run_check_fftwpp(Shape_t const& shape_in, Shape_t const& cshape_in)
     time =
         std::chrono::duration_cast<std::chrono::duration<double>>(end - start)
             .count();
-    std::cout << "mpifftwpp backward time = " << time << " s\n";
+    print_on_ranks(commxx_sptr, [&]() {
+        fmt::print("mpifftwpp backward time = {}\n", time);
+    });
 
     rcfft.Normalize(f);
     const double tolerance = 1.0e-10;
     Shape_t lower = { static_cast<int>(df.x0), static_cast<int>(df.y0), 0 };
     Shape_t upper{ static_cast<int>(df.x0 + df.x),
                    static_cast<int>(df.y0 + df.y), static_cast<int>(df.z) };
-    std::cout << "mpifftwpp check roundtrip: "
-              << general_subarray_check_equal(lower, upper, f, orig, tolerance)
-              << std::endl;
+    auto max = general_subarray_check_equal(lower, upper, f, orig, tolerance);
+    print_on_ranks(commxx_sptr,
+                   [&]() { fmt::print("mpifftwpp max error = {}\n", max); });
 }
+
 void
 run()
 {
