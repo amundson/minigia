@@ -381,8 +381,11 @@ run_check_fftwpp(Shape_t const& shape_in, Shape_t const& cshape_in)
 
     rcfft.Normalize(f);
     const double tolerance = 1.0e-10;
+    Shape_t lower = { static_cast<int>(df.x0), static_cast<int>(df.y0), 0 };
+    Shape_t upper{ static_cast<int>(df.x0 + df.x),
+                   static_cast<int>(df.y0 + df.y), static_cast<int>(df.z) };
     std::cout << "mpifftwpp check roundtrip: "
-              << general_array_check_equal(shape_in, f, orig, tolerance)
+              << general_subarray_check_equal(lower, upper, f, orig, tolerance)
               << std::endl;
 }
 void

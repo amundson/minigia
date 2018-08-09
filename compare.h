@@ -116,8 +116,39 @@ general_carray_check_equal(shape_T const& shape, array_T const& a,
 
 template <typename shape_T, typename array_T>
 double
+general_subarray_check_equal(shape_T const& lower, shape_T const& upper,
+                          array_T const& a, array_T const& b, double tolerance)
+{
+    double max_diff = -1;
+    for (long ii = lower[0]; ii < upper[0]; ++ii) {
+        long i = ii - lower[0];
+        for (long jj = lower[1]; jj < upper[1]; ++jj) {
+            long j = - lower[1];
+            for (long k = 0; k < upper[2]; ++k) {
+                auto diff = std::abs(a(i, j, k) - b(i, j, k));
+                if (diff > max_diff) {
+                    max_diff = diff;
+                }
+                if (!floating_point_equal(a(i, j, k), b(i, j, k), tolerance)) {
+                    std::cerr << "general_array_check_equal:\n";
+                    std::cerr << "  a(" << i << "," << j << "," << k
+                              << ") = " << a(i, j, k) << std::endl;
+                    std::cerr << "  b(" << i << "," << j << "," << k
+                              << ") = " << b(i, j, k) << std::endl;
+                    std::cerr << "  a-b = " << a(i, j, k) - b(i, j, k)
+                              << ", tolerance = " << tolerance << std::endl;
+                    return max_diff;
+                }
+            }
+        }
+    }
+    return max_diff;
+}
+
+template <typename shape_T, typename array_T>
+double
 general_array_check_equal(shape_T const& shape, array_T const& a,
-                          array_T const& b, double tolerance)
+                             array_T const& b, double tolerance)
 {
     double max_diff = -1;
     for (long i = 0; i < shape[0]; ++i) {
