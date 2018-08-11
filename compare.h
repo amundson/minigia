@@ -170,7 +170,7 @@ general_subarray_check_equal(shape_T const& lower, shape_T const& upper,
     for (long ii = lower[0]; ii < upper[0]; ++ii) {
         long i = ii - lower[0];
         for (long jj = lower[1]; jj < upper[1]; ++jj) {
-            long j = -lower[1];
+            long j = jj - lower[1];
             for (long k = 0; k < upper[2]; ++k) {
                 auto diff = std::abs(a(i, j, k) - b(i, j, k));
                 if (diff > max_diff) {

@@ -17,6 +17,46 @@
 
 typedef std::array<int, 3> Shape_t;
 
+double
+run_timing(const std::function<void()>& f)
+{
+    auto start = std::chrono::high_resolution_clock::now();
+    f();
+    auto end = std::chrono::high_resolution_clock::now();
+    auto time =
+        std::chrono::duration_cast<std::chrono::duration<double>>(end - start)
+            .count();
+    return time;
+}
+
+void
+show_best_time(const std::string& label,
+               const std::function<std::tuple<double, double>()>& f)
+{
+    const int timing_count = 10;
+    auto best_time1 = std::numeric_limits<double>::max();
+    auto best_time2 = std::numeric_limits<double>::max();
+    auto best_total = std::numeric_limits<double>::max();
+    for (int i = 0; i < timing_count; ++i) {
+        double time1, time2;
+        std::tie(time1, time2) = f();
+        if (time1 < best_time1) {
+            best_time1 = time1;
+        }
+        if (time2 < best_time2) {
+            best_time2 = time2;
+        }
+        if (time2 + time1 < best_total) {
+            best_total = time2 + time1;
+        }
+    }
+    Commxx commxx;
+    if (commxx.get_rank() == 0) {
+        fmt::print("{} best time: {} + {} = {}\n", label, best_time1,
+                   best_time2, best_total);
+    }
+}
+
 template <typename T>
 void
 write_array3(const char* filename, T const& a)
@@ -349,6 +389,36 @@ run_check_distrbuted_fft3d(Shape_t const& shape_in, Shape_t const& cshape_in)
     });
 }
 
+std::tuple<double, double>
+time_distrbuted_fft3d(Shape_t const& shape_in, Shape_t const& cshape_in)
+{
+    Commxx_sptr commxx_sptr(new Commxx);
+    std::vector<int> shape({ shape_in[0], shape_in[1], shape_in[2] });
+    Distributed_fft3d distributed_fft3d(shape, commxx_sptr, FFTW_ESTIMATE);
+    auto lower = distributed_fft3d.get_lower();
+    auto upper = distributed_fft3d.get_upper();
+    std::vector<int> rshape(distributed_fft3d.get_padded_shape_real());
+    MArray3d rarray(
+        boost::extents[extent_range(lower, upper)][rshape[1]][rshape[2]]);
+    MArray3d orig(
+        boost::extents[extent_range(lower, upper)][rshape[1]][rshape[2]]);
+    std::vector<int> cshape(distributed_fft3d.get_padded_shape_complex());
+    MArray3dc carray(
+        boost::extents[extent_range(lower, upper)][cshape[1]][cshape[2]]);
+    for (int i = lower; i < upper; ++i) {
+        for (int j = 0; j < shape[1]; ++j) {
+            for (int k = 0; k < shape[2]; ++k) {
+                orig[i][j][k] = rarray[i][j][k] = 1.1 * k + 100 * j + 10000 * i;
+            }
+        }
+    }
+    double forward_time =
+        run_timing([&]() { distributed_fft3d.transform(rarray, carray); });
+    double backward_time =
+        run_timing([&]() { distributed_fft3d.inv_transform(carray, rarray); });
+    return std::make_tuple(forward_time, backward_time);
+}
+
 void
 run_check_fftwpp(Shape_t const& shape_in, Shape_t const& cshape_in)
 {
@@ -390,8 +460,8 @@ run_check_fftwpp(Shape_t const& shape_in, Shape_t const& cshape_in)
         std::chrono::duration_cast<std::chrono::duration<double>>(end - start)
             .count();
     Commxx_sptr commxx_sptr(new Commxx);
-    print_on_ranks(commxx_sptr,
-                   [&]() { fmt::print("mpifftwpp time = {}\n", time); });
+//    print_on_ranks(commxx_sptr,
+//                   [&]() { fmt::print("mpifftwpp time = {}\n", time); });
 
     auto filename(carray_filename(shape_in));
     auto check(read_eigen<Complex>(filename.c_str()));
@@ -412,9 +482,9 @@ run_check_fftwpp(Shape_t const& shape_in, Shape_t const& cshape_in)
     time =
         std::chrono::duration_cast<std::chrono::duration<double>>(end - start)
             .count();
-    print_on_ranks(commxx_sptr, [&]() {
-        fmt::print("mpifftwpp backward time = {}\n", time);
-    });
+//    print_on_ranks(commxx_sptr, [&]() {
+//        fmt::print("mpifftwpp backward time = {}\n", time);
+//    });
 
     rcfft.Normalize(f);
     Shape_t lower = { static_cast<int>(df.x0), static_cast<int>(df.y0), 0 };
@@ -425,10 +495,49 @@ run_check_fftwpp(Shape_t const& shape_in, Shape_t const& cshape_in)
                    [&]() { fmt::print("mpifftwpp max error = {}\n", max); });
 }
 
+std::tuple<double, double>
+time_fftwpp(Shape_t const& shape_in, Shape_t const& cshape_in)
+{
+    unsigned int nx = shape_in[0];
+    unsigned int ny = shape_in[1];
+    unsigned int nz = shape_in[2];
+    unsigned int nzp = cshape_in[2];
+
+    utils::MPIgroup group(MPI_COMM_WORLD, nx, ny);
+    utils::split3 df(nx, ny, nz, group);
+    utils::split3 dg(nx, ny, nzp, group, true);
+
+    unsigned int dfZ = df.Z;
+
+    utils::split3 dfgather(nx, ny, dfZ, group);
+
+    Array::array3<Complex> g(dg.x, dg.y, dg.Z, utils::ComplexAlign(dg.n));
+    Array::array3<double> f, orig;
+    f.Dimension(df.x, df.y, df.Z, utils::doubleAlign(df.n));
+    orig.Dimension(df.x, df.y, df.Z, utils::doubleAlign(df.n));
+
+    int divisor = 0;   // Test for best block divisor
+    int alltoall = -1; // Test for best alltoall routine
+    fftwpp::rcfft3dMPI rcfft(df, dg, f, g,
+                             utils::mpiOptions(divisor, alltoall));
+    for (int i = 0; i < df.x; ++i) {
+        unsigned int ii = df.x0 + i;
+        for (int j = 0; j < df.y; ++j) {
+            unsigned int jj = df.y0 + j;
+            for (int k = 0; k < df.z; ++k) {
+                orig(i, j, k) = f(i, j, k) = 1.1 * k + 100 * jj + 10000 * ii;
+            }
+        }
+    }
+    double forward_time = run_timing([&]() { rcfft.Forward(f, g); });
+    double backward_time = run_timing([&]() { rcfft.Backward(g, f); });
+    return std::make_tuple(forward_time, backward_time);
+}
+
 void
 run()
 {
-    int nx = 32, ny = 16, nz = 8;
+    int nx = 32, ny = 32, nz = 256;
     //    int nx = 2, ny = 4, nz = 8;
     int nz_complex = nz / 2 + 1;
     //    unsigned int nz_padded = 2* nz_complex;
@@ -440,8 +549,11 @@ run()
         write_check(shape, cshape);
     }
     run_check_distrbuted_fft3d(shape, cshape);
-
+    show_best_time("Distributed_fft3d",
+                   [&]() { return time_distrbuted_fft3d(shape, cshape); });
     run_check_fftwpp(shape, cshape);
+    show_best_time("fftwpp",
+                   [&]() { return time_distrbuted_fft3d(shape, cshape); });
 }
 
 int
