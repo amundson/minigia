@@ -138,6 +138,26 @@ run_fftwpp_eigen()
 #endif
 
 template <typename T>
+Eigen::Tensor<T, 3>
+read_eigen(const char* filename)
+{
+    std::ifstream file(filename);
+    std::array<unsigned long, 3> shape;
+    file >> shape[0];
+    file >> shape[1];
+    file >> shape[2];
+    Eigen::Tensor<T, 3> a(shape[0], shape[1], shape[2]);
+    for (unsigned long i = 0; i < shape[0]; ++i) {
+        for (unsigned long j = 0; j < shape[1]; ++j) {
+            for (unsigned long k = 0; k < shape[2]; ++k) {
+                file >> a(i, j, k);
+            }
+        }
+    }
+    return a;
+}
+
+template <typename T>
 T
 read_marray(const char* filename)
 {
@@ -373,6 +393,19 @@ run_check_fftwpp(Shape_t const& shape_in, Shape_t const& cshape_in)
     print_on_ranks(commxx_sptr,
                    [&]() { fmt::print("mpifftwpp time = {}\n", time); });
 
+    auto filename(carray_filename(shape_in));
+    auto check(read_eigen<Complex>(filename.c_str()));
+    Lshape_t clower{ dg.x0, dg.y0, 0 };
+    Lshape_t cupper{ dg.x, dg.y, cshape_in[2] };
+    write_array3("wtf2.dat", g);
+    const double tolerance = 1.0e-10;
+    auto max_error =
+        general_subcarray_check_equal(clower, cupper, g, check, tolerance);
+    print_on_ranks(commxx_sptr, [&]() {
+        fmt::print("Distributed_fft3d carray max error: ({},{})\n",
+                   max_error.real(), max_error.imag());
+    });
+    write_array3("wtf.dat", g);
     start = std::chrono::high_resolution_clock::now();
     rcfft.Backward(g, f);
     end = std::chrono::high_resolution_clock::now();
@@ -384,7 +417,6 @@ run_check_fftwpp(Shape_t const& shape_in, Shape_t const& cshape_in)
     });
 
     rcfft.Normalize(f);
-    const double tolerance = 1.0e-10;
     Shape_t lower = { static_cast<int>(df.x0), static_cast<int>(df.y0), 0 };
     Shape_t upper{ static_cast<int>(df.x0 + df.x),
                    static_cast<int>(df.y0 + df.y), static_cast<int>(df.z) };
